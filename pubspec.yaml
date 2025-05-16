@@ -38,6 +38,7 @@ dependencies:
   fullscreen_window: ^1.0.3
   google_fonts: ^6.2.1
   flutter_svg: ^2.0.17
+  provider: ^6.1.5
 
 dev_dependencies:
   flutter_test:

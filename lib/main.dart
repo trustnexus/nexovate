@@ -1,8 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:admin_demo/view/login/loginpage.dart';
 
+import 'package:provider/provider.dart';
+import 'package:admin_demo/viewmodel/notifiers/thememode.dart';
+
 void main() {
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => ThemeModeProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {

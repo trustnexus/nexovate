@@ -107,9 +107,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(30),
                       boxShadow: const [
                         BoxShadow(
-                          color: const Color(0x99FFA500),
+                          color: Color(0x99FFA500),
                           blurRadius: 10,
-                          offset: const Offset(0, 5),
+                          offset: Offset(0, 5),
                         ),
                       ],
                     ),

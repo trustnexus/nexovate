@@ -5,10 +5,8 @@ buildscript {
         google()
         mavenCentral()
     }
-
     dependencies {
-        // Firebase Google Services plugin
-        classpath("com.google.gms:google-services:4.3.15")
+        classpath("com.google.gms:google-services:4.3.15") // Firebase plugin
     }
 }
 
@@ -19,49 +17,19 @@ allprojects {
     }
 }
 
-// 🔧 Custom build directory setup
-val newBuildDir: Directory = rootProject.layout.buildDirectory.dir("../../build").get()
-rootProject.layout.buildDirectory.value(newBuildDir)
+// ✅ Optional: Custom build directory (you may remove if unnecessary)
+val newBuildDir = rootProject.layout.buildDirectory.dir("../../build").get()
+rootProject.layout.buildDirectory.set(newBuildDir)
 
 subprojects {
-    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
-    project.layout.buildDirectory.value(newSubprojectBuildDir)
+    val newSubDir = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.set(newSubDir)
 }
 
 subprojects {
     project.evaluationDependsOn(":app")
 }
 
-tasks.register<Delete>("clean") {
-    delete(rootProject.layout.buildDirectory)
-}
-
-plugins {
-    id("com.android.application")
-    kotlin("android")
-    id("com.google.gms.google-services") // ✅ Firebase plugin
-}
-
-android {
-    compileSdk = 34
-
-    defaultConfig {
-        applicationId = "com.example.yourapp"
-        minSdk = 21
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
-    }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-        }
-    }
-}
-
-dependencies {
-    implementation("com.google.firebase:firebase-auth-ktx")
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
+tasks.register("clean", Delete::class) {
+    delete(rootProject.buildDir)
 }

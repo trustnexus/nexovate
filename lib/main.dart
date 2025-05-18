@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-//screenm impotrsss
+// Screens
 import 'src/screens/auth/login_screen.dart';
 import 'src/screens/auth/sign_up_screen.dart';
 import 'src/screens/auth/welcome_screen.dart';
@@ -9,6 +9,9 @@ import 'src/screens/home/main_dashboard.dart';
 import 'src/screens/Questionaire/questionaire.dart';
 import 'src/screens/faqs/faq_screen.dart';
 import 'src/screens/auth/log_sign.dart';
+import 'src/screens/Project/saved_project.dart';
+import 'src/screens/Project/project_detail_page.dart';
+import 'src/screens/utils/questionnaire_storage.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
@@ -32,8 +35,10 @@ class NexovateApp extends StatelessWidget {
           secondary: Colors.deepOrangeAccent,
         ),
       ),
+      
       initialRoute: '/welcome',
       onGenerateRoute: (settings) {
+        
         switch (settings.name) {
           case '/welcome':
             return _fadeRoute(const WelcomeScreen());
@@ -49,6 +54,11 @@ class NexovateApp extends StatelessWidget {
             return _fadeRoute(const DashboardScreen());
           case '/faqs':
             return _fadeRoute(FAQScreen());
+          case '/saved_proj':
+          return _fadeRoute(const SavedProjectsScreen());
+          case '/project_detail':
+          final project = settings.arguments as SavedProject;
+          return _fadeRoute(ProjectDetailPage(project: project));
           default:
             return _fadeRoute(const WelcomeScreen());
         }

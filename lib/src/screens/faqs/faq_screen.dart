@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 class FAQScreen extends StatelessWidget {
-  FAQScreen({Key? key}) : super(key: key);
+  FAQScreen({super.key});
 
   final List<FAQItem> faqItems = [
     FAQItem(
@@ -108,7 +108,7 @@ class FAQItem {
 class FAQListItem extends StatefulWidget {
   final FAQItem faqItem;
 
-  const FAQListItem({Key? key, required this.faqItem}) : super(key: key);
+  const FAQListItem({super.key, required this.faqItem});
 
   @override
   _FAQListItemState createState() => _FAQListItemState();

@@ -7,7 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
 import 'package:nexovate/src/screens/account/change_email_screen.dart';
 import 'package:nexovate/src/screens/account/change_password_screen.dart';
-
+import 'package:nexovate/src/screens/Project/saved_project.dart';
 
 class SidebarNavigation extends StatefulWidget {
   const SidebarNavigation({super.key});
@@ -85,7 +85,7 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
           ),
           const Divider(color: Colors.white24),
           buildDrawerItem(context, Icons.home, "Home", '/dashboard'),
-          buildDrawerItem(context, Icons.folder, "My Projects", '/projects'),
+          buildDrawerItem(context, Icons.folder, "My Projects", '/saved_proj'),
           buildDrawerItem(context, Icons.help_outline, "FAQs", '/faqs'),
           buildDrawerItem(context, Icons.exit_to_app, "Log out", '/login'),
         ],
@@ -151,9 +151,9 @@ void initState() {
   _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
   _controller.forward();
 
-  [nameController, emailController, passwordController, locationController].forEach((c) {
+  for (var c in [nameController, emailController, passwordController, locationController]) {
     c.addListener(() => setState(() => isChanged = true));
-  });
+  }
 }
 
 
@@ -314,21 +314,41 @@ Future<void> updateProfile() async {
               buildPassword("Password", passwordController),
               buildInput("Location", locationController, false),
               const SizedBox(height: 40),
-              ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: isChanged ? Colors.orange : Colors.grey[800],
-                    minimumSize: const Size.fromHeight(48),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                  width: double.infinity,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    gradient: isChanged
+                        ? const LinearGradient(
+                            colors: [Colors.orange, Colors.pinkAccent],
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                          )
+                        : const LinearGradient(
+                            colors: [Colors.black54, Colors.black87],
+                          ),
                   ),
-                  onPressed: isChanged ? updateProfile : null,
-                  child: Text(
-                    "Save",
-                    style: TextStyle(
-                      color: isChanged ? Colors.black : Colors.white38,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.w600,
-                      fontSize: 16,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: isChanged ? updateProfile : null,
+                      borderRadius: BorderRadius.circular(12),
+                      splashColor: Colors.white24,
+                      child: Center(
+                        child: Text(
+                          "Save",
+                          style: TextStyle(
+                            color: isChanged ? Colors.white : Colors.white38,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'Poppins',
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -380,12 +400,17 @@ Future<void> updateProfile() async {
             Padding(
               padding: const EdgeInsets.only(left: 8.0, bottom: 6),
               child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ChangeEmailScreen()),
-                  );
-                },
+                onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ChangeEmailScreen()),
+                        );
+
+                        if (result != null && result['email'] != null) {
+                          emailController.text = result['email'];
+                          setState(() => isChanged = true);
+                        }
+                      },
                 child: const Text(
                   "Change",
                   style: TextStyle(
@@ -445,12 +470,17 @@ Future<void> updateProfile() async {
           Padding(
               padding: const EdgeInsets.only(left: 8.0, bottom: 6),
               child: GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
-                  );
-                },
+                      onTap: () async {
+                        final result = await Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
+                        );
+
+                        if (result != null && result['password'] != null) {
+                          passwordController.text = result['password'];
+                          setState(() => isChanged = true);
+                        }
+                      },
                 child: const Text(
                   "Change",
                   style: TextStyle(

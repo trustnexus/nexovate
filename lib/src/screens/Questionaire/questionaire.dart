@@ -20,258 +20,57 @@ class QuestionnaireScreen extends StatefulWidget {
 class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final PageController _controller = PageController();
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
   final List<String> questions = [
-    "What kind of software project are you interested in developing?",
-    "Which platform do you prefer?",
-    "What's your preferred development timeline?",
-    "Do you require ongoing support?",
-    "Which technologies do you prefer for development?"
-  ];
+  "What is the name of your project?",
+  "What is the primary purpose of your project?",
+  "What type of project are you building?",
+  "Who are the intended users of this project?",
+  "What is the expected number of users?",
+  "Which essential features should be included?",
+  "What admin functionalities do you require?",
+  "What is your preferred development approach in terms of cost?",
+  "Which platform do you prefer for building this project?",
+  "What is your estimated budget for this project?",
+  "What is your expected project timeline?",
+  "What level of data protection or compliance is required?",
+  "Is offline access required for your project?",
+  "What third-party services or integrations do you need?",
+  "What kind of post-launch support do you require?",
+];
 
-  final List<List<String>> options = [
-    [
-      "Mobile App (Android/iOS)",
-      "Web Application",
-      "Desktop Software",
-      "E-commerce Platform",
-      "Management System",
-      "Game Development",
-      "AI/ML-Based Application"
-    ],
-    ["Android", "iOS", "Cross-platform", "Web", "Desktop"],
-    ["Less than 1 month", "1-3 months", "3-6 months", "6+ months"],
-    ["Yes", "No", "Not Sure"],
-    ["Flutter", "React Native", "Django", "Node.js", "Java", "PHP", "Other"]
-  ];
 
-  List<int?> selectedOptions = List.filled(5, null);
+final List<List<String>> options = [
+  ["Custom Input"], // For 1.1 (Project Name) – handle as TextField
+  ["Online Store", "Social Platform", "Business Management Tool", "Informational Website", "Other"],
+  ["Website", "Mobile App (Android)", "Mobile App (iOS)", "Mobile App (Both)", "Desktop Software", "Hybrid"],
+  ["General Public", "Business Customers", "Employees/Staff", "Students", "Other"],
+  ["Less than 1,000", "1,000 - 10,000", "More than 10,000"],
+  ["User Accounts", "Online Payments", "Messaging/Chat", "File Uploads", "Basic Analytics", "Other"],
+  ["Dashboard", "User Management", "Content Approval"],
+  ["Open-Source Technologies", "Custom Solution"],
+  ["WordPress", "Laravel", "Flutter", "No Preference"],
+  ["Under Rs. 20,000", "Rs. 20,000 – 50,000", "Rs. 50,000- 1,000,000", "Over Rs. 1,000,000"],
+  ["1-3 Months", "3-6 Months", "6+ Months"],
+  ["Basic Privacy Policy", "GDPR Compliance", "PCI Compliance", "Not Applicable"],
+  ["Required", "Not Needed"],
+  ["Payment Gateway (JazzCash, EasyPaisa)", "SMS Notifications", "Google Maps", "Other"],
+  ["Basic Maintenance Package", "One-Time Delivery"],
+];
+
+final Map<int, TextEditingController> customInputs = {}; // for custom/other input
+
+  @override
+  void initState() {
+    super.initState();
+    selectedOptions = List.filled(questions.length, null); // ✅ Initialize here
+  }
+
+  List<int?> selectedOptions = List.filled(15, null);
   bool isQuizCompleted = false;
-  pw.Widget _buildTechRow(String title, String value, PdfColor color) {
-  return pw.Padding(
-    padding: const pw.EdgeInsets.only(bottom: 6),
-    child: pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Container(
-          width: 90,
-          child: pw.Text(
-            "$title:",
-            style: pw.TextStyle(fontWeight: pw.FontWeight.bold, color: color),
-          ),
-        ),
-        pw.Expanded(
-          child: pw.Text(value),
-        ),
-      ],
-    ),
-  );
-}
-
-Future<pw.ImageProvider> _loadBullet() async {
-  final data = await rootBundle.load('assets/images/bullet.png');
-  return pw.MemoryImage(data.buffer.asUint8List());
-}
-
-pw.Font? poppinsRegular;
-pw.Font? poppinsBold;
-
-Future<void> _loadFonts() async {
-  if (poppinsRegular == null) {
-    poppinsRegular = pw.Font.ttf(await rootBundle.load('assets/fonts/Poppins-Regular.ttf'));
-  }
-  if (poppinsBold == null) {
-    poppinsBold = pw.Font.ttf(await rootBundle.load('assets/fonts/Poppins-Bold.ttf'));
-  }
-}
-
-
-Future<pw.ImageProvider> _loadLogo() async {
-    final logoData = await rootBundle.load('assets/images/N_log.png');
-    return pw.MemoryImage(logoData.buffer.asUint8List());
-  }
-
-Future<void> _onDownloadScopeDocument() async {
-  try {
-    final pdf = pw.Document();
-    await _loadFonts();
-    String frontend = "JavaScript";
-    String backend = "Python";
-    String database = "MySQL SQLserver";
-
-    final selectedTech = options[4][selectedOptions[4] ?? 0].toLowerCase();
-    if (selectedTech.contains("flutter") || selectedTech.contains("react")) {
-      frontend = selectedTech.contains("flutter") ? "Flutter" : "React Native";
-      backend = "Firebase";
-      database = "Firestore";
-    } else if (selectedTech.contains("django") || selectedTech.contains("node")) {
-      frontend = "JavaScript";
-      backend = selectedTech.contains("django") ? "Django (Python)" : "Node.js";
-      database = "MongoDB";
-    } else if (selectedTech.contains("java")) {
-      frontend = "JavaFX / JSP";
-      backend = "Spring Boot";
-      database = "PostgreSQL";
-    } else if (selectedTech.contains("php")) {
-      frontend = "HTML/CSS/JS";
-      backend = "PHP Laravel";
-      database = "MySQL";
-    }
-
-    print("Generating PDF...");
-    print("Frontend: $frontend | Backend: $backend | Database: $database");
-
-    final logo = await _loadLogo();
-final bullet = await _loadBullet();
-
-pdf.addPage(
-  pw.Page(
-    pageFormat: PdfPageFormat.a4,
-    margin: const pw.EdgeInsets.all(32),
-    build: (context) {
-      return pw.Container(
-        color: PdfColors.grey200,
-        padding: const pw.EdgeInsets.all(24),
-        child: pw.Column(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            // Header
-            pw.Row(
-              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-              children: [
-                pw.Column(
-                  crossAxisAlignment: pw.CrossAxisAlignment.start,
-                  children: [
-                    pw.Text("Nexovate", style: pw.TextStyle(font: poppinsBold, fontSize: 22, color: PdfColors.deepOrange)),
-                    pw.Text("Project Scope Document", style: pw.TextStyle(font: poppinsRegular, fontSize: 14)),
-                  ],
-                ),
-                pw.Image(logo, width: 50),
-              ],
-            ),
-
-            pw.Divider(thickness: 1),
-            pw.SizedBox(height: 20),
-
-            // Summary
-            pw.Text("Project Summary", style: pw.TextStyle(font: poppinsBold, fontSize: 18)),
-            pw.SizedBox(height: 10),
-            for (int i = 0; i < questions.length; i++)
-              pw.Padding(
-                padding: const pw.EdgeInsets.only(bottom: 6),
-                child: pw.RichText(
-                  text: pw.TextSpan(
-                    children: [
-                      pw.TextSpan(
-                        text: "${i + 1}. ${questions[i]}\n",
-                        style: pw.TextStyle(font: poppinsBold, fontSize: 12),
-                      ),
-                      pw.WidgetSpan(
-                        child: pw.Row(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Container(
-                              width: 8,
-                              height: 8,
-                              margin: const pw.EdgeInsets.only(right: 6, top: 3),
-                              child: pw.Image(bullet),
-                            ),
-                            pw.Expanded(
-                              child: pw.Text(
-                                options[i][selectedOptions[i] ?? 0],
-                                style: pw.TextStyle(font: poppinsRegular, fontSize: 12),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-
-            pw.SizedBox(height: 20),
-
-            // Tech Stack
-            pw.Text("Recommended Tech Stack", style: pw.TextStyle(font: poppinsBold, fontSize: 16, color: PdfColors.pink800)),
-            pw.SizedBox(height: 10),
-            _buildTechRow("Frontend", frontend, PdfColors.deepPurple),
-            _buildTechRow("Backend", backend, PdfColors.teal),
-            _buildTechRow("Database", database, PdfColors.indigo),
-
-            pw.SizedBox(height: 20),
-
-            // Notes
-            pw.Text("Notes", style: pw.TextStyle(font: poppinsBold, fontSize: 14)),
-            pw.SizedBox(height: 4),
-            pw.Text(
-              "This document outlines your preferences and suggests technologies for building your software project. "
-              "It serves as a foundational scope to guide development.",
-              style: pw.TextStyle(font: poppinsRegular, fontSize: 12),
-            ),
-
-            pw.Spacer(),
-            pw.Divider(thickness: 0.5),
-            pw.Align(
-              alignment: pw.Alignment.centerRight,
-              child: pw.Text("Generated by Nexovate", style: pw.TextStyle(fontSize: 10, font: poppinsRegular, color: PdfColors.grey600)),
-            ),
-          ],
-        ),
-      );
-    },
-  ),
-);
-
-    final output = await getApplicationDocumentsDirectory();
-    final path = "${output.path}scope_document.pdf";
-    final file = File(path);
-
-    print("📂 Saving PDF to: $path");
-    await file.writeAsBytes(await pdf.save());
-    print("✅ PDF saved successfully.");
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('📄 Scope document downloaded: $path')),
-    );
-
-    // 📝 Also save project data
-    final answers = List<String>.generate(
-      selectedOptions.length,
-      (i) => options[i][selectedOptions[i] ?? 0],
-    );
-
-    await saveProjectLocally(
-      questions: questions,
-      answers: answers,
-      frontend: frontend,
-      backend: backend,
-      database: database,
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(
-  SnackBar(content: Text('📄 Scope document downloaded & project saved: $path')),
-);
-
-    // Optional: Open the file after generation (Windows, Mac, Linux only)
-    if (Platform.isWindows) {
-      await Process.run('explorer', [path]);
-    } else if (Platform.isMacOS) {
-      await Process.run('open', [path]);
-    } else if (Platform.isLinux) {
-      await Process.run('xdg-open', [path]);
-    }
-  } catch (e) {
-    print("❌ PDF generation error: $e");
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Failed to generate PDF. Check logs for details.')),
-    );
-  }
-}
 
   void _onRestartQuiz() {
     setState(() {
-      selectedOptions = List.filled(5, null);
+      selectedOptions = List.filled(15, null);
       isQuizCompleted = false;
     });
     _controller.jumpToPage(0);
@@ -407,8 +206,40 @@ Widget buildQuestionPage(int index) {
         // 🎯 Glowy Option List
 Expanded(
   child: ListView.builder(
-    itemCount: options[index].length,
+    itemCount: options[index].length + 1, // +1 for the conditional TextField
     itemBuilder: (context, optionIndex) {
+      // 🟠 Handle dynamic text field separately
+      if (optionIndex == options[index].length) {
+        final selectedText = options[index][selectedOptions[index] ?? 0];
+        if ((selectedText == "Custom Input" || selectedText == "Other")) {
+          customInputs.putIfAbsent(index, () => TextEditingController());
+
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+            child: TextField(
+              controller: customInputs[index],
+              style: const TextStyle(color: Colors.white),
+              decoration: InputDecoration(
+                hintText: "Enter your custom input here...",
+                hintStyle: const TextStyle(color: Colors.white54),
+                filled: true,
+                fillColor: Colors.black12,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.orangeAccent),
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {}); // rebuild on input
+              },
+            ),
+          );
+        } else {
+          return const SizedBox.shrink(); // no field
+        }
+      }
+
+      // 🟢 Regular option button
       final isSelected = selectedOptions[index] == optionIndex;
       return GestureDetector(
         onTap: () {
@@ -420,7 +251,7 @@ Expanded(
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeInOut,
           margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(2.5), // border thickness
+          padding: const EdgeInsets.all(2.5),
           decoration: isSelected
               ? BoxDecoration(
                   gradient: const LinearGradient(
@@ -438,7 +269,6 @@ Expanded(
               : BoxDecoration(
                   border: Border.all(color: Colors.white24, width: 1),
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.transparent,
                 ),
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 14),
@@ -479,34 +309,55 @@ Expanded(
           );
         } else {
           // Calculate tech stack before saving
-          String frontend = "JavaScript";
-          String backend = "Python";
-          String database = "MySQL SQLserver";
+          String frontend = "";
+String backend = "";
+String database = "";
 
-          final selectedTech = options[4][selectedOptions[4] ?? 0].toLowerCase();
-          if (selectedTech.contains("flutter") || selectedTech.contains("react")) {
-            frontend = selectedTech.contains("flutter") ? "Flutter" : "React Native";
-            backend = "Firebase";
-            database = "Firestore";
-          } else if (selectedTech.contains("django") || selectedTech.contains("node")) {
-            frontend = "JavaScript";
-            backend = selectedTech.contains("django") ? "Django (Python)" : "Node.js";
-            database = "MongoDB";
-          } else if (selectedTech.contains("java")) {
-            frontend = "JavaFX / JSP";
-            backend = "Spring Boot";
-            database = "PostgreSQL";
-          } else if (selectedTech.contains("php")) {
-            frontend = "HTML/CSS/JS";
-            backend = "PHP Laravel";
-            database = "MySQL";
-          }
+final type = options[2][selectedOptions[2] ?? 0];
+final platform = options[8][selectedOptions[8] ?? 0];
+final budget = options[9][selectedOptions[9] ?? 0];
+final devApproach = options[7][selectedOptions[7] ?? 0];
+final features = [options[5][selectedOptions[5] ?? 0]];
+final compliance = options[11][selectedOptions[11] ?? 0];
+
+if (platform == "Flutter") {
+  frontend = "Flutter";
+  backend = "Firebase";
+  database = "Firestore";
+} else if (platform == "Laravel") {
+  frontend = "HTML/CSS/JS";
+  backend = "PHP Laravel";
+  database = "MySQL";
+} else if (platform == "WordPress") {
+  frontend = "WordPress";
+  backend = "PHP (WordPress API)";
+  database = "MySQL";
+} else {
+  // Dynamic fallback logic
+  if (type.contains("Mobile")) {
+    frontend = "Flutter";
+    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Firebase";
+  } else {
+    frontend = "React.js";
+    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Django";
+  }
+
+  database = compliance == "GDPR Compliance" ? "PostgreSQL" : "MongoDB";
+}
+
 
           // 📝 Save the project locally
-          final answers = List<String>.generate(
-            selectedOptions.length,
-            (i) => options[i][selectedOptions[i] ?? 0],
-          );
+          final answers = List<String>.generate(questions.length, (i) {
+  final selectedIndex = selectedOptions[i] ?? 0;
+  final selectedValue = options[i][selectedIndex];
+
+  if ((selectedValue == "Custom Input" || selectedValue == "Other") &&
+      customInputs[i]?.text.trim().isNotEmpty == true) {
+    return customInputs[i]!.text.trim(); // 🟢 Save the custom text
+  } else {
+    return selectedValue;
+  }
+});
 
           await saveProjectLocally(
             questions: questions,
@@ -565,29 +416,42 @@ Expanded(
 }
 
  Widget buildFinalOptions() {
-  String frontend = "JavaScript";
-  String backend = "Python";
-  String database = "MySQL SQLserver";
+  String frontend = "";
+String backend = "";
+String database = "";
 
-  final selectedTech = options[4][selectedOptions[4] ?? 0].toLowerCase();
+final type = options[2][selectedOptions[2] ?? 0];
+final platform = options[8][selectedOptions[8] ?? 0];
+final budget = options[9][selectedOptions[9] ?? 0];
+final devApproach = options[7][selectedOptions[7] ?? 0];
+final features = [options[5][selectedOptions[5] ?? 0]];
+final compliance = options[11][selectedOptions[11] ?? 0];
 
-  if (selectedTech.contains("flutter") || selectedTech.contains("react")) {
-    frontend = selectedTech.contains("flutter") ? "Flutter" : "React Native";
-    backend = "Firebase";
-    database = "Firestore";
-  } else if (selectedTech.contains("django") || selectedTech.contains("node")) {
-    frontend = "JavaScript";
-    backend = selectedTech.contains("django") ? "Django (Python)" : "Node.js";
-    database = "MongoDB";
-  } else if (selectedTech.contains("java")) {
-    frontend = "JavaFX / JSP";
-    backend = "Spring Boot";
-    database = "PostgreSQL";
-  } else if (selectedTech.contains("php")) {
-    frontend = "HTML/CSS/JS";
-    backend = "PHP Laravel";
-    database = "MySQL";
+if (platform == "Flutter") {
+  frontend = "Flutter";
+  backend = "Firebase";
+  database = "Firestore";
+} else if (platform == "Laravel") {
+  frontend = "HTML/CSS/JS";
+  backend = "PHP Laravel";
+  database = "MySQL";
+} else if (platform == "WordPress") {
+  frontend = "WordPress";
+  backend = "PHP (WordPress API)";
+  database = "MySQL";
+} else {
+  // Dynamic fallback logic
+  if (type.contains("Mobile")) {
+    frontend = "Flutter";
+    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Firebase";
+  } else {
+    frontend = "React.js";
+    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Django";
   }
+
+  database = compliance == "GDPR Compliance" ? "PostgreSQL" : "MongoDB";
+}
+
 
   return Padding(
     padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
@@ -648,8 +512,7 @@ Expanded(
 
         const SizedBox(height: 24),
 
-        _buildActionButton("Download", () async {
-          await _onDownloadScopeDocument();
+        _buildActionButton("Save to My Projects", () async {
 
           // ✅ Navigate to Saved Projects after download
           Navigator.push(

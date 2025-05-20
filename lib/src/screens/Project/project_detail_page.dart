@@ -17,29 +17,99 @@ class ProjectDetailPage extends StatelessWidget {
         iconTheme: const IconThemeData(color: Colors.pinkAccent),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
         child: ListView(
           children: [
             const Text(
               "Your Answers",
-              style: TextStyle(color: Colors.orange, fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                color: Colors.orange,
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-            const SizedBox(height: 12),
-            for (int i = 0; i < project.questions.length; i++)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Text(
-                  "${project.questions[i]}: ${project.selectedAnswers[i]}",
-                  style: const TextStyle(color: Colors.white70),
+            const SizedBox(height: 20),
+
+            // Questions + Answers
+            for (int i = 0; i < project.questions.length; i++) ...[
+              Text(
+                project.questions[i],
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
                 ),
               ),
-            const Divider(color: Colors.pinkAccent, height: 30),
-            const Text("Recommended Tech Stack", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-            Text("Frontend: ${project.frontend}", style: const TextStyle(color: Colors.white70)),
-            Text("Backend: ${project.backend}", style: const TextStyle(color: Colors.white70)),
-            Text("Database: ${project.database}", style: const TextStyle(color: Colors.white70)),
+              const SizedBox(height: 4),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    margin: const EdgeInsets.only(top: 6),
+                    child: Image.asset(
+                      'assets/images/bullet.png',
+                      width: 6,
+                      height: 6,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      project.selectedAnswers[i],
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+            ],
+
+            const Divider(color: Colors.pinkAccent, height: 36),
+
+            const Text(
+              "Recommended Tech Stack",
+              style: TextStyle(
+                color: Colors.pinkAccent,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildTechRow("Frontend", project.frontend),
+            _buildTechRow("Backend", project.backend),
+            _buildTechRow("Database", project.database),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTechRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        children: [
+          const Icon(Icons.check_circle_outline, size: 18, color: Colors.white70),
+          const SizedBox(width: 10),
+          Text(
+            "$label: ",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              fontSize: 14,
+            ),
+          ),
+          Flexible(
+            child: Text(
+              value,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }

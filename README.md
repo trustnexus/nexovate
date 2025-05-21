@@ -10,12 +10,17 @@ This project is started by Trust Nexus Co. (2025); as a community driven platfor
 ## Version History (Most Recent TO Least Recent)
 
 
+- Update, Users Page - I
+    - Implemented a design where top container is for searching & bottom container(yet to add) is intended for users' list
+    - TODO: Add second container for users' list with hardcoded values using UserProvider(yet to add)
+    - TODO: UI Pages: Add 2 more pages for `Design` and `Projects` management for the admin
+
 - Theme Universalization - I 
     - Created ChangeValueNotifier extended class "_ThemeModeProvider_" in `lib/viewmodel/notifiers/thememode.dart`
     - Implemented _ThemeModeProvider_ instead of `isDarkMode` variable; also abstracted toggleTheme
     - Added Theme Toggle Icon Button on bottom of side navigation bar in `dashboardpage.dart`
     - Added `utils/textstyles.dart` to further abstract theme
-    - TODO: Add `utils/constants/colors.dart` for all colors to be used across pages
+    - TODO: Add `utils/constants/colors.dart` for all colors to be used across pages (unresolved 21/05/2025)
 
 - Initial Commit Of Nexovate Admin Module
     - Implemented MVVM architecture with intention of adding Providers later on

@@ -45,6 +45,7 @@ dependencies:
   google_fonts: ^6.2.1
   uuid: ^4.0.0
   intl: ^0.18.1
+  firebase_core: ^2.25.4
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
 
@@ -75,12 +76,21 @@ flutter:
   - assets/images/check.png
   - assets/images/N_log.png
   - assets/images/Search_proj.png
+  # mobile UI
   - assets/images/mobile_ui_1.png
   - assets/images/mobile_ui_2.png
   - assets/images/mobile_ui_3.png
+  - assets/images/desktop_ui_4.png
+  - assets/images/desktop_ui_5.png
+  - assets/images/desktop_ui_6.png
+  # desktop ui
   - assets/images/desktop_ui_1.png
   - assets/images/desktop_ui_2.png
   - assets/images/desktop_ui_3.png
+  - assets/images/desktop_ui_4.png
+  - assets/images/desktop_ui_5.png
+  - assets/images/desktop_ui_6.png
+  #fonts
   - assets/fonts/NotoSans-Regular.ttf
   - assets/fonts/NotoSans-Bold.ttf
   # The following line ensures that the Material Icons font is

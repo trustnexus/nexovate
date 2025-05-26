@@ -13,11 +13,15 @@ import 'src/screens/Project/saved_project.dart';
 import 'src/screens/Project/project_detail_page.dart';
 import 'src/screens/utils/questionnaire_storage.dart';
 import 'src/screens/Project/ui_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-Future<void> main() async {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
+  await Firebase.initializeApp(); // required
   runApp(const NexovateApp());
 }
+
 
 class NexovateApp extends StatelessWidget {
   const NexovateApp({super.key});
@@ -135,3 +139,4 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
+

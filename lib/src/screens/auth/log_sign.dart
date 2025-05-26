@@ -104,7 +104,6 @@ class _EnhancedAuthScreenState extends State<EnhancedAuthScreen> with SingleTick
   }
 }
 
-
   Widget _buildTextInput({
     required TextEditingController controller,
     required String hint,

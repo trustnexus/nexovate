@@ -58,12 +58,15 @@ final List<List<String>> options = [
 ];
 
 final Map<int, TextEditingController> customInputs = {}; // for custom/other input
+TextEditingController projectNameController = TextEditingController();
+
 
   @override
-  void initState() {
-    super.initState();
-    selectedOptions = List.filled(questions.length, null); // ✅ Initialize here
-  }
+void initState() {
+  super.initState();
+  selectedOptions = List.filled(questions.length, null);
+  projectNameController.addListener(() => setState(() {})); // rebuild on input
+}
 
   List<int?> selectedOptions = List.filled(15, null);
   bool isQuizCompleted = false;
@@ -107,6 +110,25 @@ final Map<int, TextEditingController> customInputs = {}; // for custom/other inp
     );
   }
 
+
+bool isCurrentInputValid(int index) {
+  // For question 0 (project name)
+  if (index == 0) return projectNameController.text.trim().isNotEmpty;
+
+  // For "Other" or "Custom Input" selections
+  final selectedIdx = selectedOptions[index];
+  if (selectedIdx == null) return false;
+
+  final selectedValue = options[index][selectedIdx];
+  if ((selectedValue == "Other" || selectedValue == "Custom Input")) {
+    final controller = customInputs[index];
+    return controller != null && controller.text.trim().isNotEmpty;
+  }
+
+  // All other normal selections
+  return true;
+}
+
 Widget buildQuestionPage(int index) {
   return Padding(
     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -115,7 +137,7 @@ Widget buildQuestionPage(int index) {
       children: [
         const SizedBox(height: 20),
 
-        // 🔘 Soft glowing step indicator
+        // Step Indicator
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 500),
           tween: Tween(begin: 0.0, end: 1.0),
@@ -157,7 +179,7 @@ Widget buildQuestionPage(int index) {
 
         const SizedBox(height: 16),
 
-        // 🧠 Gradient-bordered soft question box
+        // Question Text
         TweenAnimationBuilder<double>(
           duration: const Duration(milliseconds: 500),
           tween: Tween(begin: 0.0, end: 1.0),
@@ -203,187 +225,209 @@ Widget buildQuestionPage(int index) {
 
         const SizedBox(height: 30),
 
-        // 🎯 Glowy Option List
-Expanded(
-  child: ListView.builder(
-    itemCount: options[index].length + 1, // +1 for the conditional TextField
-    itemBuilder: (context, optionIndex) {
-      // 🟠 Handle dynamic text field separately
-      if (optionIndex == options[index].length) {
-        final selectedText = options[index][selectedOptions[index] ?? 0];
-        if ((selectedText == "Custom Input" || selectedText == "Other")) {
-          customInputs.putIfAbsent(index, () => TextEditingController());
-
-          return Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
-            child: TextField(
-              controller: customInputs[index],
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: "Enter your custom input here...",
-                hintStyle: const TextStyle(color: Colors.white54),
-                filled: true,
-                fillColor: Colors.black12,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: Colors.orangeAccent),
-                ),
-              ),
-              onChanged: (value) {
-                setState(() {}); // rebuild on input
-              },
-            ),
-          );
-        } else {
-          return const SizedBox.shrink(); // no field
-        }
-      }
-
-      // 🟢 Regular option button
-      final isSelected = selectedOptions[index] == optionIndex;
-      return GestureDetector(
-        onTap: () {
-          setState(() {
-            selectedOptions[index] = optionIndex;
-          });
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 400),
-          curve: Curves.easeInOut,
-          margin: const EdgeInsets.symmetric(vertical: 6),
-          padding: const EdgeInsets.all(2.5),
-          decoration: isSelected
-              ? BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.pinkAccent.withOpacity(0.6),
-                      blurRadius: 12,
-                      spreadRadius: 1,
+        // Option List or TextField
+        Expanded(
+          child: index == 0
+              ? Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                  child: TextField(
+                    controller: projectNameController,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: "Enter your project name...",
+                      hintStyle: const TextStyle(color: Colors.white54),
+                      filled: true,
+                      fillColor: Colors.black12,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(color: Colors.orangeAccent),
+                      ),
                     ),
-                  ],
+                  ),
                 )
-              : BoxDecoration(
-                  border: Border.all(color: Colors.white24, width: 1),
-                  borderRadius: BorderRadius.circular(12),
+              : ListView.builder(
+                  itemCount: options[index].length + 1,
+                  itemBuilder: (context, optionIndex) {
+                    // Show custom input field
+                    if (optionIndex == options[index].length) {
+                      final selectedText = selectedOptions[index] != null
+                          ? options[index][selectedOptions[index]!]
+                          : null;
+
+                      final showCustomField = selectedText == "Custom Input" || selectedText == "Other";
+                      customInputs.putIfAbsent(index, () => TextEditingController());
+
+                      return AnimatedSize(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
+                        child: showCustomField
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+                                child: TextField(
+                                  controller: customInputs[index],
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    hintText: "Enter your custom input here...",
+                                    hintStyle: const TextStyle(color: Colors.white54),
+                                    filled: true,
+                                    fillColor: Colors.black12,
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: const BorderSide(color: Colors.orangeAccent),
+                                    ),
+                                  ),
+                                  onChanged: (value) => setState(() {}),
+                                ),
+                              )
+                            : const SizedBox.shrink(),
+                      );
+                    }
+
+                    // Option Buttons
+                    final isSelected = selectedOptions[index] == optionIndex;
+                    return GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          selectedOptions[index] = optionIndex;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 400),
+                        curve: Curves.easeInOut,
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: isSelected
+                            ? BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.pinkAccent.withOpacity(0.6),
+                                    blurRadius: 12,
+                                    spreadRadius: 1,
+                                  ),
+                                ],
+                              )
+                            : BoxDecoration(
+                                border: Border.all(color: Colors.white24, width: 1),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: Colors.black,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Center(
+                            child: Text(
+                              options[index][optionIndex],
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 15,
+                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                fontFamily: 'Poppins',
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Center(
-              child: Text(
-                options[index][optionIndex],
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                  fontFamily: 'Poppins',
-                ),
-              ),
-            ),
-          ),
         ),
-      );
-    },
-  ),
-),
 
         const SizedBox(height: 16),
-        // 🔘 Animated gradient button
+
+        // Next/Submit Button
         AnimatedOpacity(
-          duration: const Duration(milliseconds: 300),
-          opacity: selectedOptions[index] != null ? 1 : 0.5,
+  duration: const Duration(milliseconds: 300),
+  opacity: isCurrentInputValid(index) ? 1 : 0.5,
           child: GestureDetector(
-            onTap: selectedOptions[index] != null
-    ? () async {
-        if (index < questions.length - 1) {
-          _controller.nextPage(
-            duration: const Duration(milliseconds: 400),
-            curve: Curves.easeInOut,
-          );
-        } else {
-          // Calculate tech stack before saving
-          String frontend = "";
-String backend = "";
-String database = "";
+            onTap: () async {
+              if (!isCurrentInputValid(index)) return;
+              if (index < questions.length - 1) {
+                _controller.nextPage(
+                  duration: const Duration(milliseconds: 400),
+                  curve: Curves.easeInOut,
+                );
+              } else {
+                // Tech stack logic
+                String frontend = "";
+                String backend = "";
+                String database = "";
 
-final type = options[2][selectedOptions[2] ?? 0];
-final platform = options[8][selectedOptions[8] ?? 0];
-final budget = options[9][selectedOptions[9] ?? 0];
-final devApproach = options[7][selectedOptions[7] ?? 0];
-final features = [options[5][selectedOptions[5] ?? 0]];
-final compliance = options[11][selectedOptions[11] ?? 0];
+                final type = options[2][selectedOptions[2] ?? 0];
+                final platform = options[8][selectedOptions[8] ?? 0];
+                final devApproach = options[7][selectedOptions[7] ?? 0];
+                final compliance = options[11][selectedOptions[11] ?? 0];
 
-if (platform == "Flutter") {
-  frontend = "Flutter";
-  backend = "Firebase";
-  database = "Firestore";
-} else if (platform == "Laravel") {
-  frontend = "HTML/CSS/JS";
-  backend = "PHP Laravel";
-  database = "MySQL";
-} else if (platform == "WordPress") {
-  frontend = "WordPress";
-  backend = "PHP (WordPress API)";
-  database = "MySQL";
-} else {
-  // Dynamic fallback logic
-  if (type.contains("Mobile")) {
-    frontend = "Flutter";
-    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Firebase";
-  } else {
-    frontend = "React.js";
-    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Django";
-  }
+                if (platform == "Flutter") {
+                  frontend = "Flutter";
+                  backend = "Firebase";
+                  database = "Firestore";
+                } else if (platform == "Laravel") {
+                  frontend = "HTML/CSS/JS";
+                  backend = "PHP Laravel";
+                  database = "MySQL";
+                } else if (platform == "WordPress") {
+                  frontend = "WordPress";
+                  backend = "PHP (WordPress API)";
+                  database = "MySQL";
+                } else {
+                  if (type.contains("Mobile")) {
+                    frontend = "Flutter";
+                    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Firebase";
+                  } else {
+                    frontend = "React.js";
+                    backend = devApproach == "Open-Source Technologies" ? "Node.js" : "Django";
+                  }
+                  database = compliance == "GDPR Compliance" ? "PostgreSQL" : "MongoDB";
+                }
 
-  database = compliance == "GDPR Compliance" ? "PostgreSQL" : "MongoDB";
-}
+                // Save all answers
+                final answers = List<String>.generate(questions.length, (i) {
+                  if (i == 0) return projectNameController.text.trim();
+                  final selectedIndex = selectedOptions[i] ?? 0;
+                  final selectedValue = options[i][selectedIndex];
+                  if ((selectedValue == "Custom Input" || selectedValue == "Other") &&
+                      customInputs[i]?.text.trim().isNotEmpty == true) {
+                    return customInputs[i]!.text.trim();
+                  } else {
+                    return selectedValue;
+                  }
+                });
 
+                await saveProjectLocally(
+                  questions: questions,
+                  answers: answers,
+                  frontend: frontend,
+                  backend: backend,
+                  database: database,
+                );
 
-          // 📝 Save the project locally
-          final answers = List<String>.generate(questions.length, (i) {
-  final selectedIndex = selectedOptions[i] ?? 0;
-  final selectedValue = options[i][selectedIndex];
-
-  if ((selectedValue == "Custom Input" || selectedValue == "Other") &&
-      customInputs[i]?.text.trim().isNotEmpty == true) {
-    return customInputs[i]!.text.trim(); // 🟢 Save the custom text
-  } else {
-    return selectedValue;
-  }
-});
-
-          await saveProjectLocally(
-            questions: questions,
-            answers: answers,
-            frontend: frontend,
-            backend: backend,
-            database: database,
-          );
-
-          setState(() => isQuizCompleted = true);
-        }
-      }
-    : null,
+                setState(() => isQuizCompleted = true);
+              }
+            },
             child: Container(
               width: double.infinity,
               height: 45,
               margin: const EdgeInsets.symmetric(horizontal: 10),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(25),
-                gradient: selectedOptions[index] != null
+                gradient: (index == 0 && projectNameController.text.trim().isNotEmpty) ||
+                        (index != 0 && selectedOptions[index] != null)
                     ? const LinearGradient(
                         colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
                       )
                     : null,
-                color: selectedOptions[index] == null ? Colors.grey[800] : null,
-                boxShadow: selectedOptions[index] != null
+                color: (index == 0 && projectNameController.text.trim().isEmpty) ||
+                        (index != 0 && selectedOptions[index] == null)
+                    ? Colors.grey[800]
+                    : null,
+                boxShadow: (index == 0 && projectNameController.text.trim().isNotEmpty) ||
+                        (index != 0 && selectedOptions[index] != null)
                     ? [
                         BoxShadow(
                           color: Colors.pinkAccent.withOpacity(0.3),
@@ -528,7 +572,7 @@ if (platform == "Flutter") {
   );
 }
 
-  Widget _buildTechItem(String title, String value) {
+Widget _buildTechItem(String title, String value) {
   return Padding(
     padding: const EdgeInsets.symmetric(vertical: 6),
     child: Row(

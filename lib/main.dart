@@ -12,6 +12,7 @@ import 'src/screens/auth/log_sign.dart';
 import 'src/screens/Project/saved_project.dart';
 import 'src/screens/Project/project_detail_page.dart';
 import 'src/screens/utils/questionnaire_storage.dart';
+import 'src/screens/Project/ui_screen.dart';
 
 Future<void> main() async {
   await dotenv.load(fileName: ".env");
@@ -59,6 +60,9 @@ class NexovateApp extends StatelessWidget {
           case '/project_detail':
           final project = settings.arguments as SavedProject;
           return _fadeRoute(ProjectDetailPage(project: project));
+          case '/uiPreview':
+          final project = settings.arguments as SavedProject;
+          return _fadeRoute(UIProjectScreen(project: project));
           default:
             return _fadeRoute(const WelcomeScreen());
         }

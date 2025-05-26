@@ -68,11 +68,19 @@ flutter:
   - assets/images/google.png
   - assets/images/search.png
   - assets/images/av.png
+  - assets/images/arrow_left.png
+  - assets/images/arrow_right.png
   - assets/images/arrow.png
   - assets/images/bullet.png
   - assets/images/check.png
   - assets/images/N_log.png
   - assets/images/Search_proj.png
+  - assets/images/mobile_ui_1.png
+  - assets/images/mobile_ui_2.png
+  - assets/images/mobile_ui_3.png
+  - assets/images/desktop_ui_1.png
+  - assets/images/desktop_ui_2.png
+  - assets/images/desktop_ui_3.png
   - assets/fonts/NotoSans-Regular.ttf
   - assets/fonts/NotoSans-Bold.ttf
   # The following line ensures that the Material Icons font is

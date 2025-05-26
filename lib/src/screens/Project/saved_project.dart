@@ -17,6 +17,7 @@ class SavedProjectsScreen extends StatefulWidget {
 }
 
 class _SavedProjectsScreenState extends State<SavedProjectsScreen> {
+static const int maxProjects = 10;
 
 Future<void> _deleteProject(String id) async {
   final updated = _projects.where((p) => p.id != id).toList();
@@ -28,7 +29,6 @@ Future<void> _deleteProject(String id) async {
     );
   }
 }
-
 
 List<SavedProject> _projects = [];
 bool _isLoading = true;
@@ -238,7 +238,32 @@ await Process.run('explorer', [file.path]);
         child: Column(
           children: [
             _buildHeader(),
-            Expanded(
+            if (_projects.length >= maxProjects) ...[
+  Padding(
+    padding: const EdgeInsets.symmetric(vertical: 8.0),
+    child: Text(
+      "🚫 Project limit reached: Max 10 allowed!",
+      textAlign: TextAlign.center,
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+        fontFamily: 'Poppins',
+        foreground: Paint()
+          ..shader = const LinearGradient(
+            colors: [Colors.redAccent, Colors.orange],
+          ).createShader(const Rect.fromLTWH(0, 0, 200, 70)),
+        shadows: const [
+          Shadow(
+            color: Colors.orangeAccent,
+            blurRadius: 16,
+            offset: Offset(0, 0),
+          )
+        ],
+      ),
+    ),
+  ),
+],
+   Expanded(
   child: FutureBuilder<List<SavedProject>>(
     future: loadSavedProjects(), // ✅ returns Future<List<SavedProject>>
     builder: (context, snapshot) {
@@ -291,6 +316,7 @@ await Process.run('explorer', [file.path]);
       ),
     );
   }
+
 
   Widget _buildProjectCard(BuildContext context, SavedProject project, int index) {
   final timestamp = DateFormat('MMM d, yyyy – h:mm a').format(project.timestamp);
@@ -348,66 +374,72 @@ await Process.run('explorer', [file.path]);
               ),
             ),
           ),
-          trailing: Wrap(
-            spacing: 4,
-            children: [
-              IconButton(
-                icon: const Icon(Icons.picture_as_pdf, color: Colors.lightBlueAccent),
-                tooltip: "Download PDF",
-                onPressed: () => generatePdfFromProject(project, context),
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.pinkAccent),
-                tooltip: "Delete",
-                onPressed: () async {
-                  final confirm = await showDialog<bool>(
-                    context: context,
-                    builder: (ctx) => AlertDialog(
-                      backgroundColor: Colors.grey[900],
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                      title: const Text("Delete Project", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
-                      content: const Text("Are you sure you want to delete this project?", style: TextStyle(color: Colors.white70)),
-                      actionsAlignment: MainAxisAlignment.spaceAround,
-                      actions: [
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          decoration: BoxDecoration(
-                            color: Colors.redAccent,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              child: Text("No", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ),
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          decoration: BoxDecoration(
-                            color: Colors.amber[700],
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(true),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                              child: Text("Yes", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
+          trailing: SizedBox(
+  width: 120,
+  child: Row(
+    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    children: [
+      // 👁️ View UI Screen
+      IconButton(
+        icon: const Icon(Icons.remove_red_eye_rounded, color: Colors.orangeAccent),
+        tooltip: "View UI",
+        onPressed: () {
+          Navigator.pushNamed(context, '/uiPreview', arguments: project);
+        },
+      ),
 
-                  if (confirm == true) {
-                    await _deleteProject(project.id);
-                  }
-                },
-              ),
-            ],
-          ),
+      // 📄 Download PDF
+      IconButton(
+        icon: const Icon(Icons.picture_as_pdf, color: Colors.lightBlueAccent),
+        tooltip: "Download PDF",
+        onPressed: () => generatePdfFromProject(project, context),
+      ),
+
+      // 🗑️ Delete Project
+      IconButton(
+        icon: const Icon(Icons.delete, color: Colors.pinkAccent),
+        tooltip: "Delete Project",
+        onPressed: () async {
+          final confirm = await showDialog<bool>(
+            context: context,
+            builder: (ctx) => AlertDialog(
+              backgroundColor: Colors.grey[900],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              title: const Text("Delete Project", style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold)),
+              content: const Text("Are you sure you want to delete this project?", style: TextStyle(color: Colors.white70)),
+              actionsAlignment: MainAxisAlignment.spaceAround,
+              actions: [
+                // No Button
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(false),
+                  style: TextButton.styleFrom(backgroundColor: Colors.redAccent),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Text("No", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+                // Yes Button
+                TextButton(
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  style: TextButton.styleFrom(backgroundColor: Colors.amber),
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                    child: Text("Yes", style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ],
+            ),
+          );
+
+          if (confirm == true) {
+            await _deleteProject(project.id);
+          }
+          
+        },
+      ),
+    ],
+  ),
+),
           onTap: () {
             Navigator.push(
               context,

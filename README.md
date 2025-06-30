@@ -11,10 +11,10 @@ This project is started by Trust Nexus Co. (2025); as a community driven platfor
 
 
 - Update, Users Page - II, Questions Page I
- - Implemented `Users` Container, as DataTable2 holder for a list of hardcoded user models in `Users` Page
- - Softly Implemented `Questions` Page, yet to make it prettier
- - Added 2 more pages for `Design` and `Projects` management for the admin, as PLACEHOLDERS (yet to make functional)
- - TODO: Add second container for users' list with hardcoded values using UserProvider(yet to add)
+    - Implemented `Users` Container, as DataTable2 holder for a list of hardcoded user models in `Users` Page
+    - Softly Implemented `Questions` Page, yet to make it prettier
+    - Added 2 more pages for `Design` and `Projects` management for the admin, as PLACEHOLDERS (yet to make functional)
+    - TODO: Add second container for users' list with hardcoded values using UserProvider(yet to add)
 
 - Update, Users Page - I
     - Implemented a design where top container is for searching & bottom container(yet to add) is intended for users' list

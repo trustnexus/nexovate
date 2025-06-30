@@ -160,16 +160,20 @@ class _DashboardPageState extends State<DashboardPage> {
   }
 }
 
-List<String> navItems = ["Users", "Questions", "Settings", "Logout"];
+List<String> navItems = ["Users", "Questions", "UI Designs", "Projects", "Settings", "Logout"];
 List<IconData> navIcons = [
   Icons.person,
   Icons.question_mark,
+  Icons.design_services,
+  Icons.work,
   Icons.settings,
   Icons.logout,
 ];
 List<Widget> navFragments = [
-  UsersPage(),
-  QuestionsPage(),
-  Container(),
-  Container(),
+  UsersPage(), // users
+  QuestionsPage(), // questions
+  Container(), // designs
+  Container(), // projects
+  Container(), // settings
+  Container(), // logout
 ];

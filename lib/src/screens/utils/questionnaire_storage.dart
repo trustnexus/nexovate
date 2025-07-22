@@ -1,3 +1,5 @@
+// ! DEPRECATED, this file is no longer used in the application!
+
 import 'dart:convert';
 import 'dart:io';
 import 'package:path_provider/path_provider.dart';
@@ -23,30 +25,31 @@ class SavedProject {
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'timestamp': timestamp.toIso8601String(),
-        'questions': questions,
-        'selectedAnswers': selectedAnswers,
-        'frontend': frontend,
-        'backend': backend,
-        'database': database,
-      };
+    'id': id,
+    'timestamp': timestamp.toIso8601String(),
+    'questions': questions,
+    'selectedAnswers': selectedAnswers,
+    'frontend': frontend,
+    'backend': backend,
+    'database': database,
+  };
 
   static SavedProject fromJson(Map<String, dynamic> json) => SavedProject(
-        id: json['id'],
-        timestamp: DateTime.parse(json['timestamp']),
-        questions: List<String>.from(json['questions']),
-        selectedAnswers: List<String>.from(json['selectedAnswers']),
-        frontend: json['frontend'],
-        backend: json['backend'],
-        database: json['database'],
-      );
+    id: json['id'],
+    timestamp: DateTime.parse(json['timestamp']),
+    questions: List<String>.from(json['questions']),
+    selectedAnswers: List<String>.from(json['selectedAnswers']),
+    frontend: json['frontend'],
+    backend: json['backend'],
+    database: json['database'],
+  );
 }
 
 /// Get a safe application documents directory path and ensure the file exists
 Future<File> _getSavedProjectsFile() async {
   final directory = await getApplicationSupportDirectory();
-  final filePath = '${directory.path}${Platform.pathSeparator}saved_projects.json';
+  final filePath =
+      '${directory.path}${Platform.pathSeparator}saved_projects.json';
   final file = File(filePath);
 
   // ✅ Ensure the directory and file both exist
@@ -86,21 +89,25 @@ Future<void> saveProjectLocally({
       final content = await file.readAsString();
       if (content.trim().isNotEmpty) {
         final decoded = json.decode(content);
-        existingProjects = (decoded as List)
-            .map((item) => SavedProject.fromJson(item))
-            .toList();
+        existingProjects =
+            (decoded as List)
+                .map((item) => SavedProject.fromJson(item))
+                .toList();
       }
     }
 
     // Check for duplication (you can customize this logic as needed)
-    bool exists = existingProjects.any((p) =>
-        p.questions.join() == project.questions.join() &&
-        p.selectedAnswers.join() == project.selectedAnswers.join());
+    bool exists = existingProjects.any(
+      (p) =>
+          p.questions.join() == project.questions.join() &&
+          p.selectedAnswers.join() == project.selectedAnswers.join(),
+    );
 
     if (!exists) {
       existingProjects.add(project);
-      final encoded =
-          json.encode(existingProjects.map((e) => e.toJson()).toList());
+      final encoded = json.encode(
+        existingProjects.map((e) => e.toJson()).toList(),
+      );
       await file.writeAsString(encoded);
     }
   } catch (e) {
@@ -122,6 +129,7 @@ Future<List<SavedProject>> loadSavedProjects() async {
   }
   return [];
 }
+
 Future<void> saveAllProjects(List<SavedProject> projects) async {
   final file = await _getSavedProjectsFile();
   final encoded = json.encode(projects.map((e) => e.toJson()).toList());

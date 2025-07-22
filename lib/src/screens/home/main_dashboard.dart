@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
-import 'package:nexovate/src/screens/utils/sidebar_navigation.dart'; // Import the SidebarNavigation widget
+import 'package:nexovate/src/screens/utils/sidebar_navigation.dart'; 
 
 class AppImages {
   static const search = 'assets/images/search.png';
@@ -23,8 +23,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       key: _scaffoldKey,
       backgroundColor: Colors.black,
-      // Use SidebarNavigation here for the drawer
-      drawer: const SidebarNavigation(), // SidebarNavigation is now used here
+      drawer: const SidebarNavigation(), 
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,

@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 // Screens
-import 'src/screens/auth/login_screen.dart';
-import 'src/screens/auth/sign_up_screen.dart';
 import 'src/screens/auth/welcome_screen.dart';
 import 'src/screens/home/main_dashboard.dart';
 import 'src/screens/Questionaire/questionaire.dart';
@@ -13,15 +12,29 @@ import 'src/screens/Project/saved_project.dart';
 import 'src/screens/Project/project_detail_page.dart';
 import 'src/screens/utils/questionnaire_storage.dart';
 import 'src/screens/Project/ui_screen.dart';
-import 'package:firebase_core/firebase_core.dart';
+
+import 'package:provider/provider.dart';
+import 'src/providers/user.dart';
+import 'src/providers/questionnaire.dart';
+import 'src/providers/template.dart';
+
+// Main
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
-  await Firebase.initializeApp(); // required
-  runApp(const NexovateApp());
+  await Hive.initFlutter();
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => QuestionnaireProvider([])),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => TemplateProvider()),
+      ],
+      child: const NexovateApp(),
+    ),
+  );
 }
-
 
 class NexovateApp extends StatelessWidget {
   const NexovateApp({super.key});
@@ -40,10 +53,9 @@ class NexovateApp extends StatelessWidget {
           secondary: Colors.deepOrangeAccent,
         ),
       ),
-      
+
       initialRoute: '/welcome',
       onGenerateRoute: (settings) {
-        
         switch (settings.name) {
           case '/welcome':
             return _fadeRoute(const WelcomeScreen());
@@ -60,13 +72,12 @@ class NexovateApp extends StatelessWidget {
           case '/faqs':
             return _fadeRoute(FAQScreen());
           case '/saved_proj':
-          return _fadeRoute(const SavedProjectsScreen());
+            return _fadeRoute(const SavedProjectsScreen());
           case '/project_detail':
-          final project = settings.arguments as SavedProject;
-          return _fadeRoute(ProjectDetailPage(project: project));
+            final project = settings.arguments as Map;
+            return _fadeRoute(ProjectDetailPage(project: project));
           case '/uiPreview':
-          final project = settings.arguments as SavedProject;
-          return _fadeRoute(UIProjectScreen(project: project));
+            return _fadeRoute(UIProjectScreen());
           default:
             return _fadeRoute(const WelcomeScreen());
         }
@@ -78,10 +89,7 @@ class NexovateApp extends StatelessWidget {
     return PageRouteBuilder(
       pageBuilder: (_, __, ___) => screen,
       transitionsBuilder: (_, animation, __, child) {
-        return FadeTransition(
-          opacity: animation,
-          child: child,
-        );
+        return FadeTransition(opacity: animation, child: child);
       },
       transitionDuration: const Duration(milliseconds: 300),
     );
@@ -121,11 +129,15 @@ class HomeScreen extends StatelessWidget {
               const SizedBox(height: 30),
               ElevatedButton.icon(
                 icon: const Icon(Icons.logout),
-                onPressed: () => Navigator.pushReplacementNamed(context, '/login'),
+                onPressed:
+                    () => Navigator.pushReplacementNamed(context, '/login'),
                 label: const Text('Logout'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(25),
                   ),
@@ -139,4 +151,3 @@ class HomeScreen extends StatelessWidget {
     );
   }
 }
-

@@ -1,16 +1,19 @@
-# nexovate
+# Nexovate -- Powered By Trust Nexus
 
-A new Flutter project.
+An Automated Community Driven Platform for the purposes of Scope Document Generation, and much more!
 
-## Getting Started
+## Editions
 
-This project is a starting point for a Flutter application.
+- Added `services` folder, for the API service connections (used them wherever necessary)
+- Added `constants.dart` in the services folder, for the purpose of changing IP (should be in .env instead, though)
+- Added `assets/anims` folder, for the Lottie Animations, replaced previous held: circular progress indicator.
+- Deprecated previous local questionnaire storage, added HiveBox implementation instead. DEPRECATED: `utils/questionnaire_storage.dart`
+- Added `providers` for state management.
+- Added `Prompt Screen - prompt.dart`, for the purpose of drafting scope document, and refining
+- Added `utils/toast.dart` as a custom toast, replacing all the previously used Snackbars usecase: `showToast(context, message)`
+- Added `models` containing various DTOs (Data Transfer Objects) necessitating data transfer from API to frontend.
 
-A few resources to get you started if this is your first Flutter project:
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+## TODO:
+- To add `Document Downloading`, from the API endpoint: `/download:fileName`
+- To add `/generate`, whenever the project is saved! and use Hivebox to get the generated documents' filename for the downloading.

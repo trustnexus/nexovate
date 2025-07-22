@@ -1,13 +1,17 @@
-// lib/src/utils/sidebar_navigation.dart
-
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as p;
-import 'package:nexovate/src/screens/account/change_email_screen.dart';
-import 'package:nexovate/src/screens/account/change_password_screen.dart';
-import 'package:nexovate/src/screens/Project/saved_project.dart';
+// import 'package:nexovate/src/screens/account/change_email_screen.dart';
+// import 'package:nexovate/src/screens/account/change_password_screen.dart';
+
+
+import 'package:provider/provider.dart';
+import 'package:nexovate/src/providers/user.dart';
+import 'package:nexovate/src/services/auth/change-credentials.dart';
+
+import 'package:nexovate/src/screens/utils/toast.dart';
 
 class SidebarNavigation extends StatefulWidget {
   const SidebarNavigation({super.key});
@@ -17,8 +21,13 @@ class SidebarNavigation extends StatefulWidget {
 }
 
 class _SidebarNavigationState extends State<SidebarNavigation> {
-  String name = "Ahmed Suhaib";
   File? profileImage;
+
+  String getInitials(String name) {
+    final parts = name.trim().split(' ');
+    if (parts.length == 1) return parts[0].substring(0, 1).toUpperCase();
+    return (parts[0].substring(0, 1) + parts[1].substring(0, 1)).toUpperCase();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,62 +36,97 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
       child: Column(
         children: [
           const SizedBox(height: 50),
-          ListTile(
-            leading: Container(
-              child: Padding(
-                padding: const EdgeInsets.all(3),
-                child: CircleAvatar(
-                  backgroundColor: Colors.black,
-                  backgroundImage: profileImage != null
-                      ? FileImage(profileImage!)
-                      : const AssetImage('assets/images/av.png') as ImageProvider,
+          Consumer<UserProvider>(builder: (context, userProvider, child) {
+            final user = userProvider.user;
+            return ListTile(
+              leading: profileImage != null
+                  ? CircleAvatar(
+                      radius: 28,
+                      backgroundImage: FileImage(profileImage!),
+                    )
+                  : ClipOval(
+                      child: Container(
+                        width: 56,
+                        height: 56,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFFFA114),
+                              Color(0xFFFF095B),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Center(
+                          child: Text(
+                            getInitials(user?.fullName ?? 'NA'),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+              title: Text(
+                user?.fullName ?? "No Name",
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
               ),
-            ),
-            title: Text(
-              name,
-              style: const TextStyle(
-                fontFamily: 'Poppins',
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
+              subtitle: ShaderMask(
+                shaderCallback: (bounds) => const LinearGradient(
+                  colors: [
+                    Color.fromARGB(255, 255, 161, 20),
+                    Color.fromARGB(255, 255, 9, 91)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: const Text(
+                  "Edit profile",
+                  style: TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
-            ),
-            subtitle: ShaderMask(
-                  shaderCallback: (bounds) => const LinearGradient(
-                    colors: [Color.fromARGB(255, 255, 161, 20), Color.fromARGB(255, 255, 9, 91)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ).createShader(bounds),
-                  child: const Text(
-                    "Edit profile",
-                    style: TextStyle(
-                      fontFamily: 'Poppins',
-                      fontSize: 14,
-                      color: Colors.white, // still needed, but shader overrides it
-                      fontWeight: FontWeight.w500,
+              onTap: () async {
+                final updatedData = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EditProfileScreen(
+                      initialName: user?.fullName ?? "",
+                      initialProfileImage: profileImage,
                     ),
                   ),
-                ),
-            onTap: () async {
-              final updatedData = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => EditProfileScreen(
-                    initialName: name,
-                    initialProfileImage: profileImage,
-                  ),
-                ),
-              );
+                );
 
-              if (updatedData != null) {
-                setState(() {
-                  name = updatedData['name'] ?? name;
-                  profileImage = updatedData['profileImage'] ?? profileImage;
-                });
-              }
-            },
-          ),
+                if (updatedData != null) {
+                  setState(() {
+                    profileImage = updatedData['profileImage'] ?? profileImage;
+                  });
+                  if (updatedData['name'] != null && user != null) {
+                    userProvider.setUser(
+                      UserResponse(
+                        token: user.token,
+                        userId: user.userId,
+                        fullName: updatedData['name'],
+                        email: user.email,
+                      ),
+                    );
+                  }
+                }
+              },
+            );
+          }),
           const Divider(color: Colors.white24),
           buildDrawerItem(context, Icons.home, "Home", '/dashboard'),
           buildDrawerItem(context, Icons.folder, "My Projects", '/saved_proj'),
@@ -110,9 +154,11 @@ class _SidebarNavigationState extends State<SidebarNavigation> {
   }
 }
 
+
 // ------------------------
 // EditProfileScreen Widget
 // ------------------------
+
 
 class EditProfileScreen extends StatefulWidget {
   final String initialName;
@@ -128,12 +174,19 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-
 class _EditProfileScreenState extends State<EditProfileScreen> with SingleTickerProviderStateMixin {
-  final nameController = TextEditingController(text: "Ahmed Suhaib");
-  final emailController = TextEditingController(text: "test@nexovate.com");
-  final passwordController = TextEditingController(text: "123456");
-  final locationController = TextEditingController(text: "16D, Block A, Milton Street, California");
+  late TextEditingController nameController;
+  late TextEditingController emailController;
+  late TextEditingController passwordController;
+  late TextEditingController locationController;
+
+  String _getInitials(String name) {
+  final parts = name.trim().split(" ");
+  if (parts.isEmpty) return "";
+  if (parts.length == 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
 
   bool obscurePassword = true;
   bool isChanged = false;
@@ -141,21 +194,26 @@ class _EditProfileScreenState extends State<EditProfileScreen> with SingleTicker
   late AnimationController _controller;
   Animation<double>? _fadeIn;
 
- @override
-void initState() {
-  super.initState();
-  nameController.text = widget.initialName;
-  _profileImage = widget.initialProfileImage;
+  @override
+  void initState() {
+    super.initState();
+    nameController = TextEditingController(text: widget.initialName);
 
-  _controller = AnimationController(duration: const Duration(milliseconds: 600), vsync: this);
-  _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
-  _controller.forward();
+    final user = Provider.of<UserProvider>(context, listen: false).user;
+    emailController = TextEditingController(text: user?.email ?? "");
+    passwordController = TextEditingController();
+    locationController = TextEditingController();
 
-  for (var c in [nameController, emailController, passwordController, locationController]) {
-    c.addListener(() => setState(() => isChanged = true));
+    _profileImage = widget.initialProfileImage;
+
+    _controller = AnimationController(duration: const Duration(milliseconds: 600), vsync: this);
+    _fadeIn = CurvedAnimation(parent: _controller, curve: Curves.easeIn);
+    _controller.forward();
+
+    for (var c in [nameController, emailController, passwordController, locationController]) {
+      c.addListener(() => setState(() => isChanged = true));
+    }
   }
-}
-
 
   Future<void> pickImage() async {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
@@ -167,191 +225,168 @@ void initState() {
     }
   }
 
-Future<void> updateProfile() async {
-  final uri = Uri.parse("https://your-backend.com/api/update-profile");
-
-  final request = http.MultipartRequest('POST', uri)
-    ..fields['name'] = nameController.text
-    ..fields['email'] = emailController.text
-    ..fields['password'] = passwordController.text
-    ..fields['location'] = locationController.text;
-
-  if (_profileImage != null) {
-    request.files.add(await http.MultipartFile.fromPath(
-      'profile_image',
-      _profileImage!.path,
-      filename: p.basename(_profileImage!.path),
-    ));
-  }
-
-  try {
-    final response = await request.send();
-    if (!mounted) return; // 🛡 CHECK before using context
-
-    if (response.statusCode == 200) {
-      setState(() => isChanged = false);
-
-      // Return updated data first
-      Navigator.pop(context, {
-        'name': nameController.text,
-        'profileImage': _profileImage,
-      });
-
-      // Showing snackbar if still mounted (safe way)
+  Future<void> updateProfile() async {
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final user = userProvider.user;
+    if (user == null) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("✅ Profile updated successfully")),
+          const SnackBar(content: Text("⚠️ User not logged in.")),
         );
       }
-    } else {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("❌ Failed: Status ${response.statusCode}")),
-        );
-      }
+      return;
     }
-  } catch (e) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("⚠️ Error: $e")),
+
+    final token = user.token;
+    final authService = AuthService();
+
+    // Only update password if field is not empty
+    if (passwordController.text.isNotEmpty) {
+      final passwordResult = await authService.changePassword(
+        token: token,
+        currentPassword: "123456",
+        newPassword: passwordController.text,
+        confirmPassword: passwordController.text,
+      );
+      
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(passwordResult['message'] ?? 'Unknown error')),
+          );
+        }
+        return;
+    }
+
+    // Only update email if changed
+    if (emailController.text.isNotEmpty && emailController.text != user.email) {
+      final emailResult = await authService.changeEmail(
+        token: token,
+        newEmail: emailController.text,
+        confirmEmail: emailController.text,
+      );
+      if (emailResult['success'] != true) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Email change failed: ${emailResult['message'] ?? 'Unknown error'}")),
+          );
+        }
+        return;
+      }
+      // Update provider with new email
+      userProvider.setUser(
+        UserResponse(
+          token: user.token,
+          userId: user.userId,
+          fullName: nameController.text,
+          email: emailController.text,
+        ),
       );
     }
+
+    // Update user profile
+    userProvider.setUser(
+      UserResponse(
+        token: user.token,
+        userId: user.userId,
+        fullName: nameController.text,
+        email: emailController.text,
+      ),
+    );
+
+    setState(() => isChanged = false);
+
+    Navigator.pop(context, {
+      'name': nameController.text,
+      'profileImage': _profileImage,
+    });
+
+    if (mounted) {
+      
+        showToast(context, "Profile updated successfully!");
+      
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        title: const Text('Edit Profile'),
         backgroundColor: Colors.black,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.orange),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: FadeTransition(
-          opacity: _fadeIn ?? const AlwaysStoppedAnimation(1),
-          child: const Text(
-            "Edit Profile",
-            style: TextStyle(
-              fontFamily: 'Poppins',
-              fontSize: 20,
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ),
-        actions: [
-           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 16.0),
-             child: Image.asset(
-               'assets/images/N_log.png',
-               height: 28,
-               width: 28,
-               fit: BoxFit.contain,
-             ),
-           )
-         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-        child: FadeTransition(
-          opacity: _fadeIn ?? const AlwaysStoppedAnimation(1),
+      body: FadeTransition(
+        opacity: _fadeIn!,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Center(
-                child: GestureDetector(
-                  onTap: pickImage,
-                  child: Stack(
-                    alignment: Alignment.bottomRight,
-                    children: [
-                      Container(
-                               width: 104,
-                               height: 104,
-                               decoration: BoxDecoration(
-                                 shape: BoxShape.circle,
-                                 gradient: const LinearGradient(
-                                   begin: Alignment.topCenter,
-                                   end: Alignment.bottomCenter,
-                                   colors: [
-                                     Colors.orange,
-                                     Colors.pinkAccent,
-                                   ],
-                                 ),
-                               ),
-                               child: Padding(
-                                 padding: const EdgeInsets.all(3),
-                                 child: Container(
-                                   decoration: const BoxDecoration(
-                                     shape: BoxShape.circle,
-                                     color: Colors.black, // background inside the border
-                                   ),
-                                   child: CircleAvatar(
-                                     radius: 48,
-                                     backgroundImage: _profileImage != null
-                                         ? FileImage(_profileImage!)
-                                         : const AssetImage('assets/images/av.png') as ImageProvider,
-                                   ),
-                                 ),
-                               ),
-                             ),
-                      const CircleAvatar(
-                        radius: 14,
-                        backgroundColor: Colors.pink,
-                        child: Icon(Icons.edit, size: 16, color: Colors.white),
-                      )
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              buildInput("Full Name", nameController, false),
-              buildInput("Email", emailController, true),
-              buildPassword("Password", passwordController),
-              buildInput("Location", locationController, false),
-              const SizedBox(height: 40),
-              AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  width: double.infinity,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    gradient: isChanged
-                        ? const LinearGradient(
-                            colors: [Colors.orange, Colors.pinkAccent],
-                            begin: Alignment.centerLeft,
-                            end: Alignment.centerRight,
-                          )
-                        : const LinearGradient(
-                            colors: [Colors.black54, Colors.black87],
+              GestureDetector(
+                onTap: pickImage,
+                child: ClipOval(
+                      child: Container(
+                        width: 150,
+                        height: 150,
+                        decoration: const BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Color(0xFFFFA114),
+                              Color(0xFFFF095B),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      onTap: isChanged ? updateProfile : null,
-                      borderRadius: BorderRadius.circular(12),
-                      splashColor: Colors.white24,
-                      child: Center(
-                        child: Text(
-                          "Save",
-                          style: TextStyle(
-                            color: isChanged ? Colors.white : Colors.white38,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            fontFamily: 'Poppins',
-                            letterSpacing: 0.5,
+                        ),
+                        child: Center(
+                          child: Text(
+                            _getInitials(nameController.text.isNotEmpty ? nameController.text : widget.initialName),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 48,
+                            ),
                           ),
                         ),
                       ),
                     ),
+              ),
+              const SizedBox(height: 24),
+              buildInput(
+                controller: nameController,
+                label: "Full Name",
+                icon: Icons.person,
+              ),
+              const SizedBox(height: 16),
+              buildInput(
+                controller: emailController,
+                label: "Email",
+                icon: Icons.email,
+                enabled: true,
+              ),
+              const SizedBox(height: 16),
+              buildPassword(
+                controller: passwordController,
+                label: "New Password",
+                icon: Icons.lock,
+              ),
+              const SizedBox(height: 16),
+              buildInput(
+                controller: locationController,
+                label: "Location",
+                icon: Icons.location_on,
+              ),
+              const SizedBox(height: 32),
+              ElevatedButton(
+                onPressed: isChanged ? updateProfile : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
                   ),
                 ),
+                child: const Text("Save Changes"),
+              ),
             ],
           ),
         ),
@@ -359,143 +394,40 @@ Future<void> updateProfile() async {
     );
   }
 
-  Widget buildInput(String label, TextEditingController controller, bool showChange) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: Colors.grey.shade400,
-          fontSize: 13,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w400,
+  Widget buildInput({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    bool enabled = true,
+  }) {
+    return TextField(
+      controller: controller,
+      enabled: enabled,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+      ),
+    );
+  }
+
+  Widget buildPassword({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+  }) {
+    return TextField(
+      controller: controller,
+      obscureText: obscurePassword,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        border: const OutlineInputBorder(),
+        suffixIcon: IconButton(
+          icon: Icon(obscurePassword ? Icons.visibility : Icons.visibility_off),
+          onPressed: () => setState(() => obscurePassword = !obscurePassword),
         ),
       ),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontFamily: 'Poppins',
-              ),
-              cursorColor: Colors.orange,
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.only(top: 4),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.orange),
-                ),
-              ),
-            ),
-          ),
-          if (showChange)
-            Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 6),
-              child: GestureDetector(
-                onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ChangeEmailScreen()),
-                        );
-
-                        if (result != null && result['email'] != null) {
-                          emailController.text = result['email'];
-                          setState(() => isChanged = true);
-                        }
-                      },
-                child: const Text(
-                  "Change",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Colors.pinkAccent,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-      const SizedBox(height: 24),
-    ],
-  );
-}
-
-  Widget buildPassword(String label, TextEditingController controller) {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(
-        label,
-        style: TextStyle(
-          color: Colors.grey.shade400,
-          fontSize: 13,
-          fontFamily: 'Poppins',
-          fontWeight: FontWeight.w400,
-        ),
-      ),
-      Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
-            child: TextField(
-              controller: controller,
-              obscureText: obscurePassword,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 15,
-                fontFamily: 'Poppins',
-              ),
-              cursorColor: Colors.orange,
-              decoration: const InputDecoration(
-                isDense: true,
-                contentPadding: EdgeInsets.only(top: 4),
-                enabledBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.white30),
-                ),
-                focusedBorder: UnderlineInputBorder(
-                  borderSide: BorderSide(color: Colors.orange),
-                ),
-              ),
-            ),
-          ),
-          Padding(
-              padding: const EdgeInsets.only(left: 8.0, bottom: 6),
-              child: GestureDetector(
-                      onTap: () async {
-                        final result = await Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const ChangePasswordScreen()),
-                        );
-
-                        if (result != null && result['password'] != null) {
-                          passwordController.text = result['password'];
-                          setState(() => isChanged = true);
-                        }
-                      },
-                child: const Text(
-                  "Change",
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: Colors.pinkAccent,
-                    fontFamily: 'Poppins',
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-      const SizedBox(height: 24),
-    ],
-  );
-}
+    );
+  }
 }

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:nexovate/src/providers/user.dart';
 import 'package:nexovate/src/screens/Project/project_detail_page.dart';
-import 'package:flutter/services.dart';
+
 import 'package:nexovate/src/screens/utils/sidebar_navigation.dart';
+import 'package:nexovate/src/screens/utils/toast.dart';
+
+import 'package:nexovate/src/services/document/download-doc.dart' as doc_downloader;
+import 'package:provider/provider.dart';
 
 class SavedProjectsScreen extends StatefulWidget {
   const SavedProjectsScreen({super.key});
@@ -44,7 +50,26 @@ class _SavedProjectsScreenState extends State<SavedProjectsScreen> {
   }
 
   Future<void> generatePdfFromProject(Map project, BuildContext context) async {
-    // ... (keep your PDF logic, just use project['name'], project['draft'], etc.)
+    final downloadUrl = project['downloadUrl'];
+    final fileName = project['fileName'] ?? '${project['name'] ?? "Project"}.pdf';
+
+    if (downloadUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("No download URL available for this project.")),
+      );
+      return;
+    }
+
+    try {
+      final userProvider = Provider.of<UserProvider>(context, listen: false);
+      final token = userProvider.user?.token;
+
+      final filePath = await doc_downloader.downloadDocument(downloadUrl, fileName, token!);
+
+      showToast(context, "PDF downloaded to: $filePath");
+        } catch (e) {
+      showToast(context, "Error downloading PDF: $e");
+    }
   }
 
   @override
@@ -199,7 +224,7 @@ Widget build(BuildContext context) {
               color: Colors.white,
               fontWeight: FontWeight.bold,
               fontFamily: 'Poppins',
-              fontSize: 16,
+              fontSize: 14,
             ),
           ),
           subtitle: Padding(

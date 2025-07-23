@@ -4,13 +4,13 @@ import 'package:nexovate/src/screens/utils/toast.dart';
 
 import 'package:nexovate/src/services/document/generate-draft.dart';
 import 'package:nexovate/src/services/document/refine-draft.dart';
+import 'package:nexovate/src/services/document/generate-doc.dart';
 
 import 'package:lottie/lottie.dart';
 import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:provider/provider.dart';
 import 'package:nexovate/src/providers/user.dart';
-
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:nexovate/src/screens/Project/saved_project.dart';
@@ -140,7 +140,12 @@ class _PromptScreenState extends State<PromptScreen>
   }
 
   void _onAccept() {
-    Navigator.push(context, MaterialPageRoute(builder: (_) => SaveProjectScreen(markdownDraft: _markdownResponse,)));
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => SaveProjectScreen(markdownDraft: _markdownResponse),
+      ),
+    );
   }
 
   @override
@@ -502,14 +507,11 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
   }
 
   Future<void> _loadAnswers() async {
-    // Open the questionnaireAnswers box and get all answers
     final box = await Hive.openBox<String>('questionnaireAnswers');
-    // Get all keys/values as Map
     final answers = <String, dynamic>{};
     for (var key in box.keys) {
       answers[key.toString()] = box.get(key);
     }
-    // Project name from question id 1001 (as per your instruction)
     final projectName = answers['1001'] ?? 'Untitled Project';
     setState(() {
       _answers = answers;
@@ -521,6 +523,11 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
     setState(() {
       _saving = true;
     });
+
+    if (mounted) {
+      showToast(context, 'Saving project, This may take a while...');
+    }
+
     final projectsBox = await Hive.openBox('Projects');
     final project = {
       'name': _projectName ?? 'Untitled Project',
@@ -529,16 +536,33 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
       'timestamp': DateTime.now().toIso8601String(),
     };
     await projectsBox.add(project);
+
+    final userProvider = Provider.of<UserProvider>(context, listen: false);
+    final token = userProvider.user?.token ?? '';
+
+    try {
+      final result = await generateFinalDocument(token);
+      if (result.success) {
+        final lastKey = projectsBox.keys.last;
+        final savedProject = projectsBox.get(lastKey) as Map;
+        savedProject['fileName'] = result.fileName;
+        savedProject['downloadUrl'] = result.downloadUrl;
+        await projectsBox.put(lastKey, savedProject);
+      }
+    } catch (e) {
+      if (mounted) {
+        showToast(context, 'Error generating final document: $e');
+      }
+    }
+
+    if (!mounted) return;
+
     setState(() {
       _saving = false;
       _saved = true;
     });
-    // Go to SavedProjectsScreen after a short delay
-    showToast(context, 'Project saved successfully!');
-    await Future.delayed(const Duration(milliseconds: 600));
 
-    // here a service will be called that would generate the document, and save the project's document name to the projects box u feel
-    
+    showToast(context, 'Project saved successfully!');
 
     if (mounted) {
       Navigator.pushReplacement(
@@ -553,10 +577,7 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.asset(
-            'assets/images/background.png',
-            fit: BoxFit.cover,
-          ),
+          child: Image.asset('assets/images/background.png', fit: BoxFit.cover),
         ),
         Scaffold(
           backgroundColor: Colors.transparent,
@@ -594,9 +615,13 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
                             mainAxisSize: MainAxisSize.max,
                             children: [
                               ShaderMask(
-                                shaderCallback: (bounds) => const LinearGradient(
-                                  colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-                                ).createShader(bounds),
+                                shaderCallback:
+                                    (bounds) => const LinearGradient(
+                                      colors: [
+                                        Color(0xFFFF9900),
+                                        Color(0xFFFF3D5A),
+                                      ],
+                                    ).createShader(bounds),
                                 child: Text(
                                   _projectName ?? "Loading...",
                                   style: const TextStyle(
@@ -609,87 +634,95 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
                               ),
                               const SizedBox(height: 18),
                               Container(
-                                constraints: const BoxConstraints(maxHeight: 600),
-                                child: widget.markdownDraft.isEmpty
-                                    ? Center(
-                                        child: Lottie.asset(
-                                          'assets/anims/loading.json',
-                                          width: 80,
+                                constraints: const BoxConstraints(
+                                  maxHeight: 600,
+                                ),
+                                child:
+                                    widget.markdownDraft.isEmpty
+                                        ? Center(
+                                          child: Lottie.asset(
+                                            'assets/anims/loading.json',
+                                            width: 80,
+                                          ),
+                                        )
+                                        : Markdown(
+                                          data: widget.markdownDraft,
+                                          styleSheet: MarkdownStyleSheet(
+                                            p: const TextStyle(
+                                              color: Colors.white,
+                                              fontFamily: 'Poppins',
+                                              fontSize: 15,
+                                            ),
+                                            h1: const TextStyle(
+                                              color: Colors.orange,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 22,
+                                            ),
+                                            h2: const TextStyle(
+                                              color: Colors.pinkAccent,
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 18,
+                                            ),
+                                          ),
                                         ),
-                                      )
-                                    : Markdown(
-                                        data: widget.markdownDraft,
-                                        styleSheet: MarkdownStyleSheet(
-                                          p: const TextStyle(
-                                            color: Colors.white,
-                                            fontFamily: 'Poppins',
-                                            fontSize: 15,
+                              ),
+                              const SizedBox(height: 28),
+                              _saved
+                                  ? const Icon(
+                                    Icons.check_circle,
+                                    color: Colors.greenAccent,
+                                    size: 40,
+                                  )
+                                  : SizedBox(
+                                    width: double.infinity,
+                                    child: ElevatedButton(
+                                      onPressed:
+                                          _answers == null || _saving
+                                              ? null
+                                              : _saveProject,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.symmetric(
+                                          vertical: 16,
+                                        ),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            18,
                                           ),
-                                          h1: const TextStyle(
-                                            color: Colors.orange,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 22,
-                                          ),
-                                          h2: const TextStyle(
-                                            color: Colors.pinkAccent,
-                                            fontWeight: FontWeight.bold,
+                                        ),
+                                        elevation: 8,
+                                        backgroundColor: Colors.transparent,
+                                        foregroundColor: Colors.white,
+                                      ).copyWith(
+                                        backgroundColor:
+                                            MaterialStateProperty.resolveWith<
+                                              Color?
+                                            >((states) => null),
+                                        shadowColor: MaterialStateProperty.all(
+                                          Colors.transparent,
+                                        ),
+                                      ),
+                                      child: ShaderMask(
+                                        shaderCallback:
+                                            (bounds) => const LinearGradient(
+                                              colors: [
+                                                Color(0xFFF04C00),
+                                                Color(0xFFFF9900),
+                                                Color(0xFFB721FF),
+                                              ],
+                                              begin: Alignment.topLeft,
+                                              end: Alignment.bottomRight,
+                                            ).createShader(bounds),
+                                        child: const Text(
+                                          "Save Project",
+                                          style: TextStyle(
                                             fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),
-                              ),
-                              const SizedBox(height: 28),
-                              _saving
-                                  ? Lottie.asset(
-                                      'assets/anims/loading.json',
-                                      width: 48,
-                                    )
-                                  : _saved
-                                      ? const Icon(Icons.check_circle,
-                                          color: Colors.greenAccent, size: 40)
-                                      : SizedBox(
-                                          width: double.infinity,
-                                          child: ElevatedButton(
-                                            onPressed: _answers == null || _saving
-                                                ? null
-                                                : _saveProject,
-                                            style: ElevatedButton.styleFrom(
-                                              padding: const EdgeInsets.symmetric(vertical: 16),
-                                              shape: RoundedRectangleBorder(
-                                                borderRadius: BorderRadius.circular(18),
-                                              ),
-                                              elevation: 8,
-                                              backgroundColor: Colors.transparent,
-                                              foregroundColor: Colors.white,
-                                            ).copyWith(
-                                              backgroundColor: MaterialStateProperty.resolveWith<Color?>(
-                                                (states) => null,
-                                              ),
-                                              shadowColor: MaterialStateProperty.all(
-                                                Colors.transparent,
-                                              ),
-                                            ),
-                                            child: ShaderMask(
-                                              shaderCallback: (bounds) => const LinearGradient(
-                                                colors: [
-                                                  Color(0xFFF04C00),
-                                                  Color(0xFFFF9900),
-                                                  Color(0xFFB721FF),
-                                                ],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              ).createShader(bounds),
-                                              child: const Text(
-                                                "Save Project",
-                                                style: TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
+                                    ),
+                                  ),
                             ],
                           ),
                         ),
@@ -701,6 +734,15 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
             ),
           ),
         ),
+        if (_saving)
+          Container(
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF9900)),
+              ),
+            ),
+          ),
       ],
     );
   }

@@ -21,7 +21,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: "Nexovate Admin Demo",
+      title: "Nexovate Admin",
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       home: const LoginPage(),

@@ -108,7 +108,12 @@ class _UIProjectScreenState extends State<UIProjectScreen>
         );
         return FadeTransition(
           opacity: fade,
-          child: SlideTransition(position: slide, child: child),
+          child: SlideTransition(
+            position: slide,
+            child: InteractiveViewer( // Added InteractiveViewer here
+              child: child,
+            ),
+          ),
         );
       },
       child: GestureDetector(
@@ -116,18 +121,16 @@ class _UIProjectScreenState extends State<UIProjectScreen>
         onTap: () => _toggleTemplate(template), // Toggle selection
         child: Stack(
           children: [
-            Container(
-              width: 280,
-              height: 500,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                color: Colors.black,
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        isSelected
-                            ? Colors.orange.withOpacity(0.5)
-                            : Colors.orange.withOpacity(0.0),
+            ClipRRect( // Added ClipRRect for rounded corners
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                width: 280,
+                height: 500,
+                decoration: BoxDecoration(
+                  color: Colors.black,
+                  boxShadow: [
+                    BoxShadow(
+                    color: isSelected ? Colors.orange.withOpacity(0.5) : Colors.orange.withOpacity(0.0),
                     blurRadius: 20,
                   ),
                 ],
@@ -135,20 +138,19 @@ class _UIProjectScreenState extends State<UIProjectScreen>
                   color: isSelected ? Colors.orange : Colors.transparent,
                   width: 3,
                 ),
-                image:
-                    template.imageUrl.isNotEmpty
-                        ? DecorationImage(
-                          image: NetworkImage(template.imageUrl),
-                          fit: BoxFit.contain,
-                        )
-                        : null,
-              ),
-              child:
-                  template.imageUrl.isEmpty
-                      ? const Center(
-                        child: Icon(Icons.image, color: Colors.white, size: 80),
+                ),
+                child: template.imageUrl.isNotEmpty
+                    ? Image.network(
+                        template.imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) => const Center(
+                          child: Icon(Icons.broken_image, color: Colors.red, size: 80),
+                        ),
                       )
-                      : null,
+                    : const Center(
+                        child: Icon(Icons.image, color: Colors.white, size: 80),
+                      ),
+              ),
             ),
             if (isSelected)
               Positioned(

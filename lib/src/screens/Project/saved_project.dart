@@ -43,9 +43,7 @@ class _SavedProjectsScreenState extends State<SavedProjectsScreen> {
     await box.deleteAt(index);
     await _loadProjects();
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("🗑️ Project deleted")),
-      );
+      showToast(context, 'Project deleted successfully.');
     }
   }
 
@@ -243,7 +241,7 @@ Widget build(BuildContext context) {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                IconButton(
+                IconButton( // ! DEPRECATED
                   icon: const Icon(Icons.remove_red_eye_rounded, color: Colors.orangeAccent),
                   tooltip: "View UI",
                   onPressed: () {

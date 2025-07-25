@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:nexovate/src/models/auth/login_dto.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
@@ -51,29 +52,43 @@ class _EnhancedAuthScreenState extends State<EnhancedAuthScreen>
 
   Future<void> _handleGoogleLogin() async {
     try {
+      if (_isLoading) return;
       setState(() => _isLoading = true);
 
-      final account = await _googleSignIn.signIn();
+      // 1. Trigger the authentication flow
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
 
-      setState(() => _isLoading = false);
+      // 2. Obtain the auth details from the request
+      if (googleUser == null) {
+        // User cancelled the sign-in
+        return;
+      }
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-      if (account != null) {
-        // Navigate to dashboard
+      // 3. Create a new credential for Firebase
+      final AuthCredential credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      // 4. Sign in to Firebase with the credential
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.signInWithCredential(credential);
+
+      if (userCredential.user != null) {
+        // Successfully signed in to Firebase. Navigate to dashboard.
         Navigator.pushReplacementNamed(context, '/dashboard');
-      } else {
-        // User canceled the login
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Google Sign-In was cancelled")),
-        );
       }
     } catch (e) {
-      setState(() => _isLoading = false);
       debugPrint("Google Sign-In error: $e");
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Google Sign-In failed. Please try again."),
-        ),
+        const SnackBar(content: Text("Google Sign-In failed. Please try again.")),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 

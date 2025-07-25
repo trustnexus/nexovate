@@ -52,6 +52,9 @@ dependencies:
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   lottie: ^3.1.0
+  firebase_core: ^2.18.0
+  firebase_auth: ^4.16.0
+
   
 
   # The following adds the Cupertino Icons font to your application.

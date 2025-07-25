@@ -1,3 +1,5 @@
+// ! DEPRECATED FILE
+// ! This file is deprecated and will be removed in future updates.
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:google_sign_in/google_sign_in.dart';

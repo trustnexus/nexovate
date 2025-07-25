@@ -658,8 +658,8 @@ class _SaveProjectScreenState extends State<SaveProjectScreen> {
                                               fontWeight: FontWeight.bold,
                                               fontSize: 22,
                                             ),
-                                            h2: const TextStyle(
-                                              color: Colors.pinkAccent,
+                                            h2: TextStyle(
+                                              color: Colors.amber.shade900,
                                               fontWeight: FontWeight.bold,
                                               fontSize: 18,
                                             ),

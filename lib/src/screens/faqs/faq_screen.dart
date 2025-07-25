@@ -1,42 +1,33 @@
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
+import 'package:nexovate/src/models/questions/faq_dto.dart';
+import 'package:nexovate/src/providers/faq.dart';
+import 'package:nexovate/src/providers/user.dart';
+import 'package:provider/provider.dart';
 
-class FAQScreen extends StatelessWidget {
-  FAQScreen({super.key});
+class FAQScreen extends StatefulWidget {
+  const FAQScreen({super.key});
 
-  final List<FAQItem> faqItems = [
-    FAQItem(
-      question: "What is a scope document?",
-      answer: "A scope document defines the boundaries, requirements, deliverables, and key details of a project. It helps ensure all stakeholders have a clear understanding of what the project will and won't include.",
-    ),
-    FAQItem(
-      question: "How do I use this with my dev team?",
-      answer: "Share the document with your development team during project planning. Review it together to ensure everyone understands the requirements, timeline, and deliverables. Use it as a reference point throughout the development process.",
-    ),
-    FAQItem(
-      question: "What if I don't know technical terms?",
-      answer: "Don't worry! You can describe your needs in plain language. Our team can help translate your requirements into technical specifications. It's more important to clearly communicate what you want the application to do than to use technical jargon.",
-    ),
-    FAQItem(
-      question: "What is a scope document?",
-      answer: "A scope document defines the boundaries, requirements, deliverables, and key details of a project. It helps ensure all stakeholders have a clear understanding of what the project will and won't include.",
-    ),
-    FAQItem(
-      question: "How do I use this with my dev team?",
-      answer: "Share the document with your development team during project planning. Review it together to ensure everyone understands the requirements, timeline, and deliverables. Use it as a reference point throughout the development process.",
-    ),
-    FAQItem(
-      question: "What if I don't know technical terms?",
-      answer: "Don't worry! You can describe your needs in plain language. Our team can help translate your requirements into technical specifications. It's more important to clearly communicate what you want the application to do than to use technical jargon.",
-    ),
-    FAQItem(
-      question: "What is a scope document?",
-      answer: "A scope document defines the boundaries, requirements, deliverables, and key details of a project. It helps ensure all stakeholders have a clear understanding of what the project will and won't include.",
-    ),
-    FAQItem(
-      question: "How do I use this with my dev team?",
-      answer: "Share the document with your development team during project planning. Review it together to ensure everyone understands the requirements, timeline, and deliverables. Use it as a reference point throughout the development process.",
-    ),
-  ];
+  @override
+  State<FAQScreen> createState() => _FAQScreenState();
+}
+
+class _FAQScreenState extends State<FAQScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final token =
+          Provider.of<UserProvider>(context, listen: false).user?.token;
+      if (token == null || token.isEmpty) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('User not authenticated')));
+        return;
+      }
+      Provider.of<FaqProvider>(context, listen: false).fetchFaqs(token);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,27 +57,52 @@ class FAQScreen extends StatelessWidget {
         children: [
           const SizedBox(height: 16),
           Center(
-                  child: ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-                    ).createShader(Rect.fromLTWH(0, 0, bounds.width, bounds.height)),
-                    blendMode: BlendMode.srcIn,
-                    child: const Text(
-                      'FAQs',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'Poppins',
-                      ),
-                    ),
+            child: ShaderMask(
+              shaderCallback:
+                  (bounds) => const LinearGradient(
+                    colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
+                  ).createShader(
+                    Rect.fromLTWH(0, 0, bounds.width, bounds.height),
                   ),
+              blendMode: BlendMode.srcIn,
+              child: const Text(
+                'FAQs',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Poppins',
                 ),
+              ),
+            ),
+          ),
           const SizedBox(height: 24),
           Expanded(
-            child: ListView.builder(
-              itemCount: faqItems.length,
-              itemBuilder: (context, index) {
-                return FAQListItem(faqItem: faqItems[index]);
+            child: Consumer<FaqProvider>(
+              builder: (context, provider, child) {
+                if (provider.isLoading) {
+                  return Center(
+                    child: Lottie.asset(
+                      'assets/anims/loading.json',
+                      width: 100,
+                    ),
+                  );
+                }
+
+                if (provider.error != null) {
+                  return Center(
+                    child: Text(
+                      'Error: ${provider.error}',
+                      style: const TextStyle(color: Colors.red),
+                    ),
+                  );
+                }
+
+                return ListView.builder(
+                  itemCount: provider.faqs.length,
+                  itemBuilder: (context, index) {
+                    return FAQListItem(faqItem: provider.faqs[index]);
+                  },
+                );
               },
             ),
           ),
@@ -97,23 +113,17 @@ class FAQScreen extends StatelessWidget {
   }
 }
 
-class FAQItem {
-  final String question;
-  final String answer;
-
-  FAQItem({required this.question, required this.answer});
-}
-
 class FAQListItem extends StatefulWidget {
-  final FAQItem faqItem;
+  final FaqDTO faqItem;
 
   const FAQListItem({super.key, required this.faqItem});
 
   @override
-  _FAQListItemState createState() => _FAQListItemState();
+  State<FAQListItem> createState() => _FAQListItemState();
 }
 
-class _FAQListItemState extends State<FAQListItem> with SingleTickerProviderStateMixin {
+class _FAQListItemState extends State<FAQListItem>
+    with SingleTickerProviderStateMixin {
   bool _expanded = false;
   late AnimationController _animationController;
   late Animation<double> _animation;
@@ -145,15 +155,16 @@ class _FAQListItemState extends State<FAQListItem> with SingleTickerProviderStat
           onTap: () {
             setState(() {
               _expanded = !_expanded;
-              if (_expanded) {
-                _animationController.forward();
-              } else {
-                _animationController.reverse();
-              }
+              _expanded
+                  ? _animationController.forward()
+                  : _animationController.reverse();
             });
           },
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16.0,
+              vertical: 12.0,
+            ),
             child: Row(
               children: [
                 Image.asset('assets/images/bullet.png', width: 10, height: 10),
@@ -161,10 +172,7 @@ class _FAQListItemState extends State<FAQListItem> with SingleTickerProviderStat
                 Expanded(
                   child: Text(
                     widget.faqItem.question,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                    ),
+                    style: const TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
                 AnimatedRotation(
@@ -175,7 +183,7 @@ class _FAQListItemState extends State<FAQListItem> with SingleTickerProviderStat
                     width: 20,
                     height: 20,
                   ),
-                )
+                ),
               ],
             ),
           ),
@@ -186,17 +194,11 @@ class _FAQListItemState extends State<FAQListItem> with SingleTickerProviderStat
             padding: const EdgeInsets.fromLTRB(36, 0, 16, 16),
             child: Text(
               widget.faqItem.answer,
-              style: TextStyle(
-                color: Colors.grey[400],
-                fontSize: 14,
-              ),
+              style: TextStyle(color: Colors.grey[400], fontSize: 14),
             ),
           ),
         ),
-        Divider(
-          color: Colors.grey[900],
-          height: 1,
-        ),
+        Divider(color: Colors.grey[900], height: 1),
       ],
     );
   }

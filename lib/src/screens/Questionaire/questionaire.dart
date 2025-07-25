@@ -25,6 +25,8 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   bool isQuizCompleted = false;
   bool isLoading = false;
+  bool _isNextButtonEnabled = true;
+  bool _isSaving = false; // New state variable for saving
   String error = '';
   late Box<String> _questionnaireBox;
 
@@ -133,7 +135,10 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
         if (i == 0) {
           provider.projectNameController.text = savedAnswer;
         } else if (question.type.toLowerCase() == 'text_input') {
-          provider.customInputs.putIfAbsent(i, () => TextEditingController()).text = savedAnswer;
+          provider
+              .customInputs
+              .putIfAbsent(i, () => TextEditingController())
+              .text = savedAnswer;
         }
         // For multiple choice, we'd need to map the saved string back to an option index
       }
@@ -369,13 +374,17 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
             opacity: isValid ? 1 : 0.5,
             child: GestureDetector(
               onTap: () async {
-                if (!isValid) return;
+                if (!isValid || !_isNextButtonEnabled || _isSaving) return;
 
                 final userProvider = Provider.of<UserProvider>(
                   context,
                   listen: false,
                 );
                 final token = userProvider.user?.token;
+                setState(() {
+                  _isSaving = true;
+                  _isNextButtonEnabled = false; // Disable button immediately
+                });
 
                 if (token != null) {
                   await _saveAnswer(
@@ -384,6 +393,12 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                     provider: provider,
                   );
                 }
+                await Future.delayed(const Duration(milliseconds: 200));
+
+                setState(() {
+                  _isSaving = false;
+                  _isNextButtonEnabled = true; // Re-enable button after delay
+                });
 
                 if (index < provider.questions.length - 1) {
                   _controller.nextPage(
@@ -391,33 +406,54 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
                     curve: Curves.easeInOut,
                   );
                 } else {
+                  // If it's the last question, set quiz as completed
                   setState(() => isQuizCompleted = true);
                 }
               },
-
-              child: Container(
-                width: double.infinity,
-                height: 45,
-                margin: const EdgeInsets.symmetric(horizontal: 10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(25),
-                  gradient:
-                      isValid
-                          ? const LinearGradient(
-                            colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-                          )
-                          : null,
-                  color: !isValid ? Colors.grey[800] : null,
-                ),
-                child: Center(
-                  child: Text(
-                    index == provider.questions.length - 1 ? "Submit" : "Next",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontFamily: 'Poppins',
-                      fontWeight: FontWeight.bold,
-                    ),
+              child: AbsorbPointer(
+                absorbing:
+                    !_isNextButtonEnabled ||
+                    _isSaving ||
+                    !isValid ||
+                    isQuizCompleted,
+                child: Container(
+                  width: double.infinity,
+                  height: 45,
+                  margin: const EdgeInsets.symmetric(horizontal: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(25),
+                    gradient:
+                        isValid
+                            ? const LinearGradient(
+                              colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
+                            )
+                            : null,
+                    color: !isValid ? Colors.grey[800] : null,
+                  ),
+                  child: Center(
+                    child:
+                        _isSaving
+                            ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
+                                strokeWidth: 2,
+                              ),
+                            )
+                            : Text(
+                              index == provider.questions.length - 1
+                                  ? "Submit"
+                                  : "Next",
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                   ),
                 ),
               ),
@@ -512,148 +548,6 @@ class _QuestionnaireScreenState extends State<QuestionnaireScreen> {
           ),
         );
       },
-    );
-  }
-
-  Widget buildFinalOptions(QuestionnaireProvider provider) {
-    final platform = provider.getAnswer(8);
-    final type = provider.getAnswer(2);
-    final devApproach = provider.getAnswer(7);
-    final compliance = provider.getAnswer(11);
-
-    String frontend = "", backend = "", database = "";
-
-    if (platform == "Flutter") {
-      frontend = "Flutter";
-      backend = "Firebase";
-      database = "Firestore";
-    } else if (platform == "Laravel") {
-      frontend = "HTML/CSS/JS";
-      backend = "PHP Laravel";
-      database = "MySQL";
-    } else if (platform == "WordPress") {
-      frontend = "WordPress";
-      backend = "PHP (WordPress API)";
-      database = "MySQL";
-    } else {
-      frontend = type.contains("Mobile") ? "Flutter" : "React.js";
-      backend =
-          devApproach == "Open-Source Technologies"
-              ? "Node.js"
-              : (frontend == "Flutter" ? "Firebase" : "Django");
-      database = compliance == "GDPR Compliance" ? "PostgreSQL" : "MongoDB";
-    }
-
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const SizedBox(height: 20),
-          const Text(
-            "Project Requirements\nProcessed Successfully!",
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(height: 30),
-          ShaderMask(
-            shaderCallback:
-                (bounds) => const LinearGradient(
-                  colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-                ).createShader(bounds),
-            child: const Text(
-              "Recommended TechStack:",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
-          const SizedBox(height: 28),
-          _buildTechItem("Frontend:", frontend),
-          _buildTechItem("Backend:", backend),
-          _buildTechItem("Database:", database),
-          const SizedBox(height: 40),
-          _buildActionButton("Save to My Projects", () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SavedProjectsScreen()),
-            );
-          }),
-          const SizedBox(height: 12),
-          _buildActionButton("Restart", _onRestartQuiz),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTechItem(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          Image.asset('assets/images/check.png', height: 20, width: 20),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              fontFamily: 'Poppins',
-            ),
-          ),
-          const SizedBox(width: 6),
-          Flexible(
-            child: Text(
-              value,
-              style: const TextStyle(
-                color: Colors.white70,
-                fontFamily: 'Poppins',
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildActionButton(String label, VoidCallback onPressed) {
-    return Center(
-      child: Container(
-        width: 200,
-        height: 45,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(25),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF9900), Color(0xFFFF3D5A)],
-          ),
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(25),
-            onTap: onPressed,
-            child: Center(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontFamily: 'Poppins',
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
     );
   }
 }

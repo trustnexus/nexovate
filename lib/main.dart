@@ -10,13 +10,16 @@ import 'src/screens/faqs/faq_screen.dart';
 import 'src/screens/auth/log_sign.dart';
 import 'src/screens/Project/saved_project.dart';
 import 'src/screens/Project/project_detail_page.dart';
-import 'src/screens/utils/questionnaire_storage.dart';
 import 'src/screens/Project/ui_screen.dart';
 
 import 'package:provider/provider.dart';
 import 'src/providers/user.dart';
 import 'src/providers/questionnaire.dart';
 import 'src/providers/template.dart';
+import 'src/providers/faq.dart';
+
+import 'package:firebase_core/firebase_core.dart';
+
 
 // Main
 
@@ -24,12 +27,15 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: ".env");
   await Hive.initFlutter();
+  await Firebase.initializeApp();
+  
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => QuestionnaireProvider([])),
         ChangeNotifierProvider(create: (_) => UserProvider()),
         ChangeNotifierProvider(create: (_) => TemplateProvider()),
+        ChangeNotifierProvider(create: (_) => FaqProvider()),
       ],
       child: const NexovateApp(),
     ),
